@@ -14,7 +14,7 @@
 
 #pragma once
 
-namespace hal::__device__ {   // NOLINT
-struct __device___replace_me  // NOLINT
+namespace hal::input {
+struct input_replace_me
 {};
-}  // namespace hal::__device__
+}  // namespace hal::input
