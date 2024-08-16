@@ -18,6 +18,7 @@
 #include <libhal-armcortex/startup.hpp>
 #include <libhal-armcortex/system_control.hpp>
 
+#include <libhal-soft/bit_bang_i2c.hpp>
 #include <libhal-stm32f1/clock.hpp>
 #include <libhal-stm32f1/constants.hpp>
 #include <libhal-stm32f1/output_pin.hpp>
@@ -42,11 +43,20 @@ resource_list initialize_platform()
                                   });
 
   static hal::stm32f1::output_pin led('C', 13);
+  static hal::stm32f1::output_pin sda('B', 7);
+  static hal::stm32f1::output_pin scl('B', 6);
+  // TODO(#4): Remove configure calls
+  sda.configure({ .resistor = hal::pin_resistor::pull_up, .open_drain = true });
+  scl.configure({ .resistor = hal::pin_resistor::pull_up, .open_drain = true });
+  static hal::bit_bang_i2c::pins pins{ .sda = &sda, .scl = &scl };
+  static hal::bit_bang_i2c bit_bang_i2c(pins, counter);
+  bit_bang_i2c.configure(hal::i2c::settings{ .clock_rate = 100.0_kHz });
 
   return {
     .reset = +[]() { hal::cortex_m::reset(); },
     .console = &uart1,
     .clock = &counter,
     .status_led = &led,
+    .i2c = &bit_bang_i2c,
   };
 }

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <libhal-arm-mcu/lpc40/i2c.hpp>
 #include <libhal-armcortex/dwt_counter.hpp>
 #include <libhal-armcortex/startup.hpp>
 #include <libhal-armcortex/system_control.hpp>
@@ -21,14 +22,14 @@
 #include <libhal-lpc40/uart.hpp>
 #include <libhal-util/as_bytes.hpp>
 
-#include "../resource_list.hpp"
+#include <resource_list.hpp>
 
 resource_list initialize_platform()
 {
   using namespace hal::literals;
 
   // Set the MCU to the maximum clock speed
-  hal::lpc40::maximum(10.0_MHz);
+  hal::lpc40::maximum(12.0_MHz);
 
   // Create a hardware counter
   static hal::cortex_m::dwt_counter counter(
@@ -43,11 +44,13 @@ resource_list initialize_platform()
                                 });
 
   static hal::lpc40::output_pin led(1, 10);
+  static hal::lpc40::i2c i2c(2);
 
   return {
     .reset = []() { hal::cortex_m::reset(); },
     .console = &uart0,
     .clock = &counter,
     .status_led = &led,
+    .i2c = &i2c,
   };
 }
