@@ -20,8 +20,10 @@ libhal_test_and_make_library(
 
   SOURCES
   src/input.cpp
+  src/gamepad/nunchuck.cpp
 
   TEST_SOURCES
+  tests/gamepad/nunchuck.test.cpp
   tests/input.test.cpp
   tests/main.test.cpp
 )
