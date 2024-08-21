@@ -23,7 +23,6 @@ resource_list resources{};
 
 [[noreturn]] void terminate_handler() noexcept
 {
-
   if (not resources.status_led && not resources.clock) {
     // spin here until debugger is connected
     while (true) {
@@ -32,7 +31,6 @@ resource_list resources{};
   }
 
   // Otherwise, blink the led in a pattern
-
   auto& led = *resources.status_led.value();
   auto& clock = *resources.clock.value();
 
@@ -51,16 +49,8 @@ resource_list resources{};
 
 int main()
 {
-  try {
-    resources = initialize_platform();
-  } catch (...) {
-    while (true) {
-      // halt here and wait for a debugger to connect
-      continue;
-    }
-  }
-
   hal::set_terminate(terminate_handler);
+  initialize_platform(resources);
 
   try {
     application(resources);
@@ -74,4 +64,12 @@ int main()
 
   // Terminate if the code reaches this point.
   std::terminate();
+}
+
+extern "C"
+{
+  // This gets rid of an issue with libhal-exceptions in Debug mode.
+  void __assert_func()
+  {
+  }
 }
