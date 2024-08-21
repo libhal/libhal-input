@@ -25,14 +25,15 @@
 struct resource_list
 {
   hal::callback<void()> reset;
-  std::optional<hal::serial*> console = std::nullopt;
-  std::optional<hal::serial*> uart3 = std::nullopt;
-  std::optional<hal::steady_clock*> clock = std::nullopt;
-  std::optional<hal::output_pin*> status_led = std::nullopt;
-  // Add more driver interfaces here ...
-  std::optional<hal::i2c*> i2c = std::nullopt;
+  std::optional<hal::serial*> console;
+  std::optional<hal::serial*> uart3;
+  std::optional<hal::steady_clock*> clock;
+  std::optional<hal::output_pin*> status_led;
+  std::optional<hal::i2c*> i2c;
 };
 
-// Application function is implemented by one of the .cpp files.
-resource_list initialize_platform();
+// Each application file should have this function implemented
 void application(resource_list& p_map);
+
+// Each platform file should have this function implemented
+void initialize_platform(resource_list& p_resources);

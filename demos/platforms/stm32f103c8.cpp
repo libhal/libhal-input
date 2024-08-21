@@ -26,43 +26,40 @@
 
 #include <resource_list.hpp>
 
-resource_list initialize_platform()
+void initialize_platform(resource_list& p_resources)
 {
   using namespace hal::literals;
+
+  p_resources.reset = +[]() { hal::cortex_m::reset(); };
 
   // Set the MCU to the maximum clock speed
   hal::stm32f1::maximum_speed_using_internal_oscillator();
 
   static hal::cortex_m::dwt_counter counter(
     hal::stm32f1::frequency(hal::stm32f1::peripheral::cpu));
+  p_resources.clock = &counter;
 
   static hal::stm32f1::uart uart1(hal::port<1>,
                                   hal::buffer<128>,
                                   hal::serial::settings{
                                     .baud_rate = 115200,
                                   });
+  p_resources.console = &uart1;
+
   static hal::stm32f1::uart uart3(hal::port<3>,
                                   hal::buffer<128>,
                                   hal::serial::settings{
                                     .baud_rate = 9600,
                                   });
+  p_resources.uart3 = &uart3;
 
   static hal::stm32f1::output_pin led('C', 13);
+  p_resources.status_led = &led;
+
   static hal::stm32f1::output_pin sda('B', 7);
   static hal::stm32f1::output_pin scl('B', 6);
-  // TODO(#4): Remove configure calls
-  sda.configure({ .resistor = hal::pin_resistor::pull_up, .open_drain = true });
-  scl.configure({ .resistor = hal::pin_resistor::pull_up, .open_drain = true });
   static hal::bit_bang_i2c::pins pins{ .sda = &sda, .scl = &scl };
   static hal::bit_bang_i2c bit_bang_i2c(pins, counter);
   bit_bang_i2c.configure(hal::i2c::settings{ .clock_rate = 100.0_kHz });
-
-  return {
-    .reset = +[]() { hal::cortex_m::reset(); },
-    .console = &uart1,
-    .uart3 = &uart3,
-    .clock = &counter,
-    .status_led = &led,
-    .i2c = &bit_bang_i2c,
-  };
+  p_resources.i2c = &bit_bang_i2c;
 }
