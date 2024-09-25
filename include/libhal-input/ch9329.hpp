@@ -32,8 +32,14 @@ public:
     mouse_absolute& left_button(bool p_pressed);
     mouse_absolute& middle_button(bool p_pressed);
     mouse_absolute& right_button(bool p_pressed);
-    std::uint16_t get_screen_width();
-    std::uint16_t get_screen_height();
+    std::uint16_t get_screen_width()
+    {
+      return m_screen_width;
+    };
+    std::uint16_t get_screen_height()
+    {
+      return m_screen_height;
+    };
     auto const& get_data() const
     {
       return m_data;

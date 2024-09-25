@@ -77,6 +77,7 @@ hal::byte calculate_sum(std::span<hal::byte> p_bytes, hal::byte p_command)
   std::uint8_t sum_byte = header_byte_1;
   sum_byte += header_byte_2;
   sum_byte += address_byte;
+  sum_byte += p_command;
   sum_byte += get_size_byte(p_command);
   for (hal::byte byte : p_bytes) {
     sum_byte += byte;
@@ -106,22 +107,22 @@ void ch9329::send(ch9329::mouse_absolute const& p_data)
 ch9329::mouse_absolute& ch9329::mouse_absolute::position(std::uint16_t p_x,
                                                          std::uint16_t p_y)
 {
-  if (p_x > m_screen_width) {
-    p_x = m_screen_width;
+  if (p_x >= m_screen_width) {
+    p_x = m_screen_width - 1;
   }
-  std::uint16_t x_value = (4096 * p_x) / m_screen_width;
-  hal::byte lower_bits = hal::bit_extract<hal::byte_m<0>>(x_value);
+  if (p_y >= m_screen_height) {
+    p_y = m_screen_height - 1;
+  }
+  std::uint16_t x_value = ((p_x * 4096) / m_screen_width);
+  hal::byte lower_bits = x_value & 0xFF;
   m_data[2] = lower_bits;
-  hal::byte upper_bits = hal::bit_extract<hal::byte_m<1>>(x_value);
+  hal::byte upper_bits = (x_value >> 8) & 0xFF;
   m_data[3] = upper_bits;
 
-  if (p_y > m_screen_height) {
-    p_y = m_screen_height;
-  }
-  std::uint16_t y_value = (4096 * m_screen_height) / p_y;
-  lower_bits = hal::bit_extract<hal::byte_m<0>>(y_value);
+  std::uint16_t y_value = ((p_y * 4096) / m_screen_height);
+  lower_bits = y_value & 0xFF;
   m_data[4] = lower_bits;
-  upper_bits = hal::bit_extract<hal::byte_m<1>>(y_value);
+  upper_bits = (y_value >> 8) & 0xFF;
   m_data[5] = upper_bits;
   return *this;
 }

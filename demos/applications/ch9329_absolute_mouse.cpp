@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <cstdint>
 #include <libhal-input/ch9329.hpp>
 #include <libhal-input/gamepad/nunchuck.hpp>
 #include <libhal-util/serial.hpp>
@@ -25,26 +26,49 @@ void application(resource_list& p_map)
   using namespace std::chrono_literals;
   using namespace hal::literals;
 
-  constexpr auto sensitivity = 4;
   auto& clock = *p_map.clock.value();
   auto& console = *p_map.console.value();
   auto& uart3 = *p_map.uart3.value();
-  auto& i2c = *p_map.i2c.value();
 
-  hal::input::nunchuck nunchuck(i2c);
   hal::input::ch9329 usb_control(uart3);
-  hal::input::ch9329::mouse_relative rel_mouse_control;
+  uint16_t width = 3840;
+  uint16_t height = 2160;
+
+  hal::input::ch9329::mouse_absolute abs_mouse_control(width, height);
 
   hal::print(console, "Demo Application Starting...\n\n");
+  hal::print<32>(console, "Screen Width: %li ", width);
+  hal::print<32>(console, "Screen Height: %li \n", height);
 
   while (true) {
-    auto data = nunchuck.read();
-    std::int8_t x = (data.joystick_x() - 128) / sensitivity;
-    std::int8_t y = -(data.joystick_y() - 128) / sensitivity;
-    rel_mouse_control.move(x, y)
-      .left_button(data.c_button())
-      .right_button(data.z_button());
-    usb_control.send(rel_mouse_control);
-    hal::delay(clock, 1ms);
+    // top left corner
+    abs_mouse_control.position(1, 1);
+    usb_control.send(abs_mouse_control);
+    hal::delay(clock, 1s);
+
+    // middle screen
+    abs_mouse_control.position(width / 2, height / 2);
+    usb_control.send(abs_mouse_control);
+    hal::delay(clock, 1s);
+
+    // bottom right
+    abs_mouse_control.position(width, height);
+    usb_control.send(abs_mouse_control);
+    hal::delay(clock, 1s);
+
+    // bottom left
+    abs_mouse_control.position(1, height);
+    usb_control.send(abs_mouse_control);
+    hal::delay(clock, 1s);
+
+    // middle screen
+    abs_mouse_control.position(width / 2, height / 2);
+    usb_control.send(abs_mouse_control);
+    hal::delay(clock, 1s);
+
+    // top right
+    abs_mouse_control.position(width, 1);
+    usb_control.send(abs_mouse_control);
+    hal::delay(clock, 1s);
   }
 }

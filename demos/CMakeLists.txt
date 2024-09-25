@@ -21,6 +21,7 @@ libhal_build_demos(
   input
   nunchuck
   ch9329_nunchuck_mouse
+  ch9329_absolute_mouse
 
   INCLUDES
   .
