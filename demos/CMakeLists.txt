@@ -20,6 +20,7 @@ libhal_build_demos(
   DEMOS
   input
   nunchuck
+  ch9329_nunchuck_mouse
 
   INCLUDES
   .
