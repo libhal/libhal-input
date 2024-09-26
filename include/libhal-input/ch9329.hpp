@@ -15,6 +15,7 @@
 #pragma once
 
 #include <cstdint>
+#include <libhal-input/ch9329_kb_bytes.hpp>
 #include <libhal/serial.hpp>
 #include <libhal/units.hpp>
 
@@ -185,6 +186,70 @@ public:
   };
 
   /**
+   * @brief Holds data and functions related to using keyboard general commands
+   *
+   */
+  class keyboard_general
+  {
+  public:
+    /**
+     * @brief Construct a new keyboard general object
+     *
+     */
+    keyboard_general();
+    /**
+     * @brief Press a control key.
+     *
+     * Control keys are left and right control, shift, alt, and windows keys.
+     *
+     * @param p_key control_key_bit enum value representing which key to press
+     * @return keyboard_general&
+     */
+    keyboard_general& press_control_key(control_key_bit p_key);
+    /**
+     * @brief Press a normal key.
+     *
+     * @param p_key normal_key enum value representing which key to press
+     * @param p_slot Which slot number to put the key into. Valid values are 1 -
+     * 6
+     * @return keyboard_general&
+     */
+    keyboard_general& press_normal_key(normal_key p_key, uint8_t p_slot);
+    /**
+     * @brief Release a control key.
+     *
+     * @param p_key control_key_bit enum value representing which key to release
+     * @return keyboard_general&
+     */
+    keyboard_general& release_control_key(control_key_bit p_key);
+    /**
+     * @brief Release a normal key.
+     *
+     * @param p_key normal_key enum value representing which key to press
+     * @return keyboard_general&
+     */
+    keyboard_general& release_normal_key(normal_key p_key);
+    /**
+     * @brief Release all keys, this includes control and normal keys.
+     *
+     * @return keyboard_general&
+     */
+    keyboard_general& release_all_keys();
+    /**
+     * @brief Get the data array containing the control bytes
+     *
+     * @return auto const& Byte array containing control information
+     */
+    auto const& get_data() const
+    {
+      return m_data;
+    }
+
+  private:
+    std::array<hal::byte, 8> m_data = {};
+  };
+
+  /**
    * @brief Construct a new ch9329 object
    *
    * @param p_uart uart used to communicate with CH9329
@@ -202,6 +267,12 @@ public:
    * @param p_data mouse relative object containing command bytes
    */
   void send(mouse_relative const& p_data);
+  /**
+   * @brief Send keyboard general command
+   *
+   * @param p_data keyboard general object containing command bytes
+   */
+  void send(keyboard_general const& p_data);
 
 private:
   hal::serial* m_uart;

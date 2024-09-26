@@ -48,6 +48,11 @@ ch9329::mouse_relative::mouse_relative()
   m_data = { 0x01, 0x00, 0x00, 0x00, 0x00 };
 }
 
+ch9329::keyboard_general::keyboard_general()
+{
+  m_data = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+}
+
 hal::byte get_size_byte(hal::byte p_command)
 {
   switch (p_command) {
@@ -100,6 +105,15 @@ void ch9329::send(ch9329::mouse_absolute const& p_data)
   send_start_bytes(*m_uart, cmd_send_ms_abs_data);
   hal::print(*m_uart, bytes);
   auto sum_byte = calculate_sum(bytes, cmd_send_ms_abs_data);
+  hal::print(*m_uart, std::to_array({ sum_byte }));
+}
+
+void ch9329::send(ch9329::keyboard_general const& p_data)
+{
+  auto bytes = p_data.get_data();
+  send_start_bytes(*m_uart, cmd_send_kb_general_data);
+  hal::print(*m_uart, bytes);
+  auto sum_byte = calculate_sum(bytes, cmd_send_kb_general_data);
   hal::print(*m_uart, std::to_array({ sum_byte }));
 }
 
@@ -193,4 +207,102 @@ ch9329::mouse_relative& ch9329::mouse_relative::right_button(bool p_pressed)
   return *this;
 }
 
+// keyboard general functions
+ch9329::keyboard_general& ch9329::keyboard_general::press_control_key(
+  control_key_bit p_key)
+{
+  hal::byte mask = 0x00;
+  switch (p_key) {
+    case control_key_bit::left_control:
+      mask = 0b1;
+      break;
+    case control_key_bit::left_shift:
+      mask = 0b10;
+      break;
+    case control_key_bit::left_alt:
+      mask = 0b100;
+      break;
+    case control_key_bit::left_windows:
+      mask = 0b1000;
+      break;
+    case control_key_bit::right_control:
+      mask = 0b10000;
+      break;
+    case control_key_bit::right_shift:
+      mask = 0b100000;
+      break;
+    case control_key_bit::right_alt:
+      mask = 0b1000000;
+      break;
+    case control_key_bit::right_windows:
+      mask = 0b10000000;
+      break;
+  }
+  m_data[0] = m_data[0] | mask;
+  return *this;
+}
+
+ch9329::keyboard_general& ch9329::keyboard_general::release_control_key(
+  control_key_bit p_key)
+{
+  hal::byte mask = 0xFF;
+  switch (p_key) {
+    case control_key_bit::left_control:
+      mask = 0b11111110;
+      break;
+    case control_key_bit::left_shift:
+      mask = 0b11111101;
+      break;
+    case control_key_bit::left_alt:
+      mask = 0b11111011;
+      break;
+    case control_key_bit::left_windows:
+      mask = 0b11110111;
+      break;
+    case control_key_bit::right_control:
+      mask = 0b11101111;
+      break;
+    case control_key_bit::right_shift:
+      mask = 0b11011111;
+      break;
+    case control_key_bit::right_alt:
+      mask = 0b10111111;
+      break;
+    case control_key_bit::right_windows:
+      mask = 0b01111111;
+      break;
+  }
+  m_data[0] = m_data[0] & mask;
+  return *this;
+}
+
+ch9329::keyboard_general& ch9329::keyboard_general::press_normal_key(
+  normal_key p_key,
+  uint8_t p_slot)
+{
+  if (p_slot < 1) {
+    p_slot = 1;
+  } else if (p_slot > 6) {
+    p_slot = 6;
+  }
+  m_data[p_slot + 1] = static_cast<hal::byte>(p_key);
+  return *this;
+}
+
+ch9329::keyboard_general& ch9329::keyboard_general::release_normal_key(
+  normal_key p_key)
+{
+  for (int i = 2; i < 8; i++) {
+    if (m_data[i] == static_cast<hal::byte>(p_key)) {
+      m_data[i] = 0x00;
+    }
+  }
+  return *this;
+}
+
+ch9329::keyboard_general& ch9329::keyboard_general::release_all_keys()
+{
+  m_data = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+  return *this;
+}
 }  // namespace hal::input

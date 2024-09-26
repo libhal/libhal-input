@@ -22,6 +22,7 @@ libhal_build_demos(
   nunchuck
   ch9329_nunchuck_mouse
   ch9329_absolute_mouse
+  ch9329_keyboard
 
   INCLUDES
   .
