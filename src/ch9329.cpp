@@ -136,31 +136,23 @@ ch9329::mouse_absolute& ch9329::mouse_absolute::scroll_position(
 
 ch9329::mouse_absolute& ch9329::mouse_absolute::left_button(bool p_pressed)
 {
-  if (p_pressed) {
-    m_data[1] = m_data[1] | 0b001;
-  } else {
-    m_data[1] = m_data[1] & 0b110;
-  }
+  constexpr auto left_button_mask = hal::bit_mask::from<0>();
+  hal::bit_modify(m_data[1]).insert<left_button_mask>(p_pressed);
+  return *this;
   return *this;
 }
 
 ch9329::mouse_absolute& ch9329::mouse_absolute::middle_button(bool p_pressed)
 {
-  if (p_pressed) {
-    m_data[1] = m_data[1] | 0b100;
-  } else {
-    m_data[1] = m_data[1] & 0b011;
-  }
+  constexpr auto middle_button_mask = hal::bit_mask::from<2>();
+  hal::bit_modify(m_data[1]).insert<middle_button_mask>(p_pressed);
   return *this;
 }
 
 ch9329::mouse_absolute& ch9329::mouse_absolute::right_button(bool p_pressed)
 {
-  if (p_pressed) {
-    m_data[1] = m_data[1] | 0b010;
-  } else {
-    m_data[1] = m_data[1] & 0b101;
-  }
+  constexpr auto right_button_mask = hal::bit_mask::from<1>();
+  hal::bit_modify(m_data[1]).insert<right_button_mask>(p_pressed);
   return *this;
 }
 
@@ -182,31 +174,22 @@ ch9329::mouse_relative& ch9329::mouse_relative::scroll_position(
 
 ch9329::mouse_relative& ch9329::mouse_relative::left_button(bool p_pressed)
 {
-  if (p_pressed) {
-    m_data[1] = m_data[1] | 0b001;
-  } else {
-    m_data[1] = m_data[1] & 0b110;
-  }
+  constexpr auto left_button_mask = hal::bit_mask::from<0>();
+  hal::bit_modify(m_data[1]).insert<left_button_mask>(p_pressed);
   return *this;
 }
 
 ch9329::mouse_relative& ch9329::mouse_relative::middle_button(bool p_pressed)
 {
-  if (p_pressed) {
-    m_data[1] = m_data[1] | 0b100;
-  } else {
-    m_data[1] = m_data[1] & 0b011;
-  }
+  constexpr auto middle_button_mask = hal::bit_mask::from<2>();
+  hal::bit_modify(m_data[1]).insert<middle_button_mask>(p_pressed);
   return *this;
 }
 
 ch9329::mouse_relative& ch9329::mouse_relative::right_button(bool p_pressed)
 {
-  if (p_pressed) {
-    m_data[1] = m_data[1] | 0b010;
-  } else {
-    m_data[1] = m_data[1] & 0b101;
-  }
+  constexpr auto right_button_mask = hal::bit_mask::from<1>();
+  hal::bit_modify(m_data[1]).insert<right_button_mask>(p_pressed);
   return *this;
 }
 

@@ -25,7 +25,7 @@ void application(resource_list& p_map)
   using namespace std::chrono_literals;
   using namespace hal::literals;
 
-  constexpr auto sensitivity = 4;
+  constexpr auto sensitivity = 16;
   auto& clock = *p_map.clock.value();
   auto& console = *p_map.console.value();
   auto& uart3 = *p_map.uart3.value();
