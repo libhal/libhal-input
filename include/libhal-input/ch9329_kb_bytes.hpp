@@ -27,6 +27,41 @@ enum class control_key_bit : std::uint8_t
   right_windows = 7,
 };
 
+enum class acpi_key : std::uint8_t
+{
+  power = 0,
+  sleep = 1,
+  wake_up = 2
+};
+
+enum class media_key : std::uint8_t
+{
+  volume_up = 0,
+  volume_down = 1,
+  mute = 2,
+  play_pause = 3,
+  next_track = 4,
+  prev_track = 5,
+  cd_stop = 6,
+  eject = 7,
+  email = 8,
+  internet_search = 9,
+  internet_favorites = 10,
+  internet_home = 11,
+  internet_back = 12,
+  internet_forward = 13,
+  internet_stop = 14,
+  refresh = 15,
+  media = 16,
+  explorer = 17,
+  calculator = 18,
+  screen_save = 19,
+  my_computer = 20,
+  minimize = 21,
+  record = 22,
+  rewind = 23
+};
+
 enum class normal_key : hal::byte
 {
   a = 0x04,

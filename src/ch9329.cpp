@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <cstdint>
 #include <libhal-input/ch9329.hpp>
 #include <libhal-util/bit.hpp>
 #include <libhal-util/serial.hpp>
@@ -48,6 +49,12 @@ ch9329::mouse_relative::mouse_relative()
   m_data = { 0x01, 0x00, 0x00, 0x00, 0x00 };
 }
 
+ch9329::keyboard_media::keyboard_media()
+{
+  m_media_data = { 0x02, 0x00, 0x00, 0x00 };
+  m_acpi_data = { 0x01, 0x00 };
+}
+
 ch9329::keyboard_general::keyboard_general()
 {
   m_data = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
@@ -59,7 +66,7 @@ hal::byte get_size_byte(hal::byte p_command)
     case cmd_send_kb_general_data:
       return 0x08;
     case cmd_send_kb_media_data:
-      return 0x01;
+      return 0x04;
     case cmd_send_ms_abs_data:
       return 0x07;
     case cmd_send_ms_rel_data:
@@ -68,12 +75,16 @@ hal::byte get_size_byte(hal::byte p_command)
   return 0x00;
 }
 
-void send_start_bytes(serial& p_serial, hal::byte p_command)
+void send_start_bytes(serial& p_serial, hal::byte p_command, uint8_t p_size = 0)
 {
   std::array<hal::byte, 5> start_bytes = {
     header_byte_1, header_byte_2, address_byte, p_command
   };
-  start_bytes[4] = get_size_byte(p_command);
+  if (p_size == 0) {
+    start_bytes[4] = get_size_byte(p_command);
+  } else {
+    start_bytes[4] = p_size;  // does this work?
+  }
   hal::print(p_serial, start_bytes);
 }
 
@@ -115,6 +126,23 @@ void ch9329::send(ch9329::keyboard_general const& p_data)
   hal::print(*m_uart, bytes);
   auto sum_byte = calculate_sum(bytes, cmd_send_kb_general_data);
   hal::print(*m_uart, std::to_array({ sum_byte }));
+}
+
+void ch9329::send(keyboard_media const& p_data, bool p_acpi)
+{
+  if (p_acpi) {
+    auto bytes = p_data.get_acpi_data();
+    send_start_bytes(*m_uart, cmd_send_kb_media_data, 2);
+    hal::print(*m_uart, bytes);
+    auto sum_byte = calculate_sum(bytes, cmd_send_kb_media_data);
+    hal::print(*m_uart, std::to_array({ sum_byte }));
+  } else {
+    auto bytes = p_data.get_media_data();
+    send_start_bytes(*m_uart, cmd_send_kb_media_data);
+    hal::print(*m_uart, bytes);
+    auto sum_byte = calculate_sum(bytes, cmd_send_kb_media_data);
+    hal::print(*m_uart, std::to_array({ sum_byte }));
+  }
 }
 
 // mouse absolute functions
@@ -204,6 +232,120 @@ ch9329::mouse_relative& ch9329::mouse_relative::right_button(bool p_pressed)
 {
   constexpr auto right_button_mask = hal::bit_mask::from<1>();
   hal::bit_modify(m_data[1]).insert<right_button_mask>(p_pressed);
+  return *this;
+}
+
+// keyboard media functions
+ch9329::keyboard_media& ch9329::keyboard_media::press_media_key(media_key p_key)
+{
+  auto byte_num = (static_cast<uint8_t>(p_key) >> 3) + 1;
+  auto bit_num = static_cast<uint8_t>(p_key) & 0b111;
+
+  switch (bit_num) {
+    case 0:
+      m_media_data[byte_num] = m_media_data[byte_num] | 0b1;
+      break;
+    case 1:
+      m_media_data[byte_num] = m_media_data[byte_num] | 0b10;
+      break;
+    case 2:
+      m_media_data[byte_num] = m_media_data[byte_num] | 0b100;
+      break;
+    case 3:
+      m_media_data[byte_num] = m_media_data[byte_num] | 0b1000;
+      break;
+    case 4:
+      m_media_data[byte_num] = m_media_data[byte_num] | 0b10000;
+      break;
+    case 5:
+      m_media_data[byte_num] = m_media_data[byte_num] | 0b100000;
+      break;
+    case 6:
+      m_media_data[byte_num] = m_media_data[byte_num] | 0b1000000;
+      break;
+    case 7:
+      m_media_data[byte_num] = m_media_data[byte_num] | 0b10000000;
+      break;
+  }
+  return *this;
+}
+
+ch9329::keyboard_media& ch9329::keyboard_media::release_media_key(
+  media_key p_key)
+{
+  auto byte_num = (static_cast<uint8_t>(p_key) >> 3) + 1;
+  auto bit_num = static_cast<uint8_t>(p_key) & 0b111;
+
+  switch (bit_num) {
+    case 0:
+      m_media_data[byte_num] = m_media_data[byte_num] & 0b11111110;
+      break;
+    case 1:
+      m_media_data[byte_num] = m_media_data[byte_num] & 0b11111101;
+      break;
+    case 2:
+      m_media_data[byte_num] = m_media_data[byte_num] & 0b11111011;
+      break;
+    case 3:
+      m_media_data[byte_num] = m_media_data[byte_num] & 0b11110111;
+      break;
+    case 4:
+      m_media_data[byte_num] = m_media_data[byte_num] & 0b11101111;
+      break;
+    case 5:
+      m_media_data[byte_num] = m_media_data[byte_num] & 0b11011111;
+      break;
+    case 6:
+      m_media_data[byte_num] = m_media_data[byte_num] & 0b10111111;
+      break;
+    case 7:
+      m_media_data[byte_num] = m_media_data[byte_num] & 0b01111111;
+      break;
+  }
+  return *this;
+}
+
+ch9329::keyboard_media& ch9329::keyboard_media::release_all_media_keys()
+{
+  m_media_data = { 0x01, 0x00, 0x00, 0x00 };
+  return *this;
+}
+
+ch9329::keyboard_media& ch9329::keyboard_media::press_acpi_key(acpi_key p_key)
+{
+  switch (p_key) {
+    case acpi_key::power:
+      m_acpi_data[1] = m_acpi_data[1] | 0b001;
+      break;
+    case acpi_key::sleep:
+      m_acpi_data[1] = m_acpi_data[1] | 0b010;
+      break;
+    case acpi_key::wake_up:
+      m_acpi_data[1] = m_acpi_data[1] | 0b100;
+      break;
+  }
+  return *this;
+}
+
+ch9329::keyboard_media& ch9329::keyboard_media::release_acpi_key(acpi_key p_key)
+{
+  switch (p_key) {
+    case acpi_key::power:
+      m_acpi_data[1] = m_acpi_data[1] & 0b110;
+      break;
+    case acpi_key::sleep:
+      m_acpi_data[1] = m_acpi_data[1] & 0b101;
+      break;
+    case acpi_key::wake_up:
+      m_acpi_data[1] = m_acpi_data[1] & 0b011;
+      break;
+  }
+  return *this;
+}
+
+ch9329::keyboard_media& ch9329::keyboard_media::release_all_acpi_keys()
+{
+  m_acpi_data = { 0x02, 0x00 };
   return *this;
 }
 

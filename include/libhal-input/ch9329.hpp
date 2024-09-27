@@ -186,6 +186,81 @@ public:
   };
 
   /**
+   * @brief Holds data and functions related to using keyboard media commands
+   */
+  class keyboard_media
+  {
+  public:
+    /**
+     * @brief Construct a new keyboard media object
+     *
+     */
+    keyboard_media();
+    /**
+     * @brief Press a media key.
+     *
+     * @param p_key media_key enum representing which key to press
+     * @return keyboard_media&
+     */
+    keyboard_media& press_media_key(media_key p_key);
+    /**
+     * @brief Release a media key.
+     *
+     * @param p_key media_key enum representing which key to release
+     * @return keyboard_media&
+     */
+    keyboard_media& release_media_key(media_key p_key);
+    /**
+     * @brief Release all acpi keys
+     *
+     * @return keyboard_media&
+     */
+    keyboard_media& release_all_media_keys();
+    /**
+     * @brief Press an acpi key.
+     *
+     * @param p_key acpi_key enum representing which key to press
+     * @return keyboard_media&
+     */
+    keyboard_media& press_acpi_key(acpi_key p_key);
+    /**
+     * @brief Release an acpi key.
+     *
+     * @param p_key acpi_key enum representing which key to release
+     * @return keyboard_media&
+     */
+    keyboard_media& release_acpi_key(acpi_key p_key);
+    /**
+     * @brief Release all acpi keys
+     *
+     * @return keyboard_media&
+     */
+    keyboard_media& release_all_acpi_keys();
+    /**
+     * @brief Get the data array containing the control bytes for media keys
+     *
+     * @return auto const& Byte array containing control information
+     */
+    auto const& get_media_data() const
+    {
+      return m_media_data;
+    }
+    /**
+     * @brief Get the data array containing the control bytes for acpi keys
+     *
+     * @return auto const& Byte array containing control information
+     */
+    auto const& get_acpi_data() const
+    {
+      return m_acpi_data;
+    }
+
+  private:
+    std::array<hal::byte, 4> m_media_data = {};
+    std::array<hal::byte, 2> m_acpi_data = {};
+  };
+
+  /**
    * @brief Holds data and functions related to using keyboard general commands
    *
    */
@@ -267,6 +342,13 @@ public:
    * @param p_data mouse relative object containing command bytes
    */
   void send(mouse_relative const& p_data);
+  /**
+   * @brief Send keyboard media command
+   *
+   * @param p_data keyboard media object containing command bytes
+   * @param p_is_acpi is the command sending acpi key presses
+   */
+  void send(keyboard_media const& p_data, bool p_is_acpi = false);
   /**
    * @brief Send keyboard general command
    *
