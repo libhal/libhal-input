@@ -42,6 +42,9 @@ void application(resource_list& p_map)
     auto data = nunchuck.read();
     std::int8_t x = (data.joystick_x() - 128) / sensitivity;
     std::int8_t y = -(data.joystick_y() - 128) / sensitivity;
+    rel_mouse_control.move(x, y).left_button(data.c_button());
+    usb_control.send(rel_mouse_control);
+
     // only send keyboard commands if btn state has changed
     bool z_button_state = data.z_button();
     if (z_button_state && z_button_state != btn_prev_state) {
@@ -54,8 +57,6 @@ void application(resource_list& p_map)
       kb_media_control.release_media_key(media_key::play_pause);
       usb_control.send(kb_media_control);
     }
-    rel_mouse_control.move(x, y).left_button(data.c_button());
-    usb_control.send(rel_mouse_control);
     hal::delay(clock, 1ms);
   }
 }
