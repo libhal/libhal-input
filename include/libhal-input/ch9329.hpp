@@ -26,6 +26,14 @@ namespace hal::input {
  */
 class ch9329
 {
+  struct chip_info
+  {
+    hal::byte version;
+    bool enumeration_status;
+    bool num_lock;
+    bool caps_lock;
+    bool scroll_lock;
+  };
   /**
    * @brief Holds data and functions related to using mouse absolute position
    * commands
@@ -370,6 +378,8 @@ public:
    * @param p_data keyboard general object containing command bytes
    */
   void send(keyboard_general const& p_data);
+
+  chip_info get_info();
 
 private:
   hal::serial* m_uart;

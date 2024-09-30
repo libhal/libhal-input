@@ -17,6 +17,7 @@
 #include <libhal-util/bit.hpp>
 #include <libhal-util/serial.hpp>
 #include <libhal/serial.hpp>
+#include <libhal/timeout.hpp>
 #include <libhal/units.hpp>
 
 namespace hal::input {
@@ -25,6 +26,7 @@ constexpr hal::byte header_byte_1 = 0x57;
 constexpr hal::byte header_byte_2 = 0xAB;
 constexpr hal::byte address_byte = 0x00;
 
+constexpr hal::byte cmd_get_info = 0x01;
 constexpr hal::byte cmd_send_kb_general_data = 0x02;
 constexpr hal::byte cmd_send_kb_media_data = 0x03;
 constexpr hal::byte cmd_send_ms_abs_data = 0x04;
@@ -148,6 +150,22 @@ void ch9329::send(keyboard_acpi const& p_data)
   hal::print(*m_uart, bytes);
   auto sum_byte = calculate_sum(bytes, cmd_send_kb_media_data);
   hal::print(*m_uart, std::to_array({ sum_byte }));
+}
+
+ch9329::chip_info ch9329::get_info()
+{
+  std::array<hal::byte, 14> info_bytes;
+  send_start_bytes(*m_uart, cmd_get_info);
+  hal::print(*m_uart, std::to_array({ (hal::byte)0x03 }));
+  hal::read(*m_uart, info_bytes, hal::never_timeout());
+  chip_info info = {};
+  info.version = info_bytes[5];
+  info.enumeration_status = info_bytes[6];
+  info.num_lock = info_bytes[7] & 0b1;
+  info.caps_lock = info_bytes[7] & 0b10;
+  info.scroll_lock = info_bytes[7] & 0b100;
+
+  return info;
 }
 
 // mouse absolute functions
