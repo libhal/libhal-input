@@ -51,8 +51,12 @@ ch9329::mouse_relative::mouse_relative()
 
 ch9329::keyboard_media::keyboard_media()
 {
-  m_media_data = { 0x02, 0x00, 0x00, 0x00 };
-  m_acpi_data = { 0x01, 0x00 };
+  m_data = { 0x02, 0x00, 0x00, 0x00 };
+}
+
+ch9329::keyboard_acpi::keyboard_acpi()
+{
+  m_data = { 0x01, 0x00 };
 }
 
 ch9329::keyboard_general::keyboard_general()
@@ -128,21 +132,22 @@ void ch9329::send(ch9329::keyboard_general const& p_data)
   hal::print(*m_uart, std::to_array({ sum_byte }));
 }
 
-void ch9329::send(keyboard_media const& p_data, bool p_acpi)
+void ch9329::send(keyboard_media const& p_data)
 {
-  if (p_acpi) {
-    auto bytes = p_data.get_acpi_data();
-    send_start_bytes(*m_uart, cmd_send_kb_media_data, 2);
-    hal::print(*m_uart, bytes);
-    auto sum_byte = calculate_sum(bytes, cmd_send_kb_media_data);
-    hal::print(*m_uart, std::to_array({ sum_byte }));
-  } else {
-    auto bytes = p_data.get_media_data();
-    send_start_bytes(*m_uart, cmd_send_kb_media_data);
-    hal::print(*m_uart, bytes);
-    auto sum_byte = calculate_sum(bytes, cmd_send_kb_media_data);
-    hal::print(*m_uart, std::to_array({ sum_byte }));
-  }
+  auto bytes = p_data.get_data();
+  send_start_bytes(*m_uart, cmd_send_kb_media_data);
+  hal::print(*m_uart, bytes);
+  auto sum_byte = calculate_sum(bytes, cmd_send_kb_media_data);
+  hal::print(*m_uart, std::to_array({ sum_byte }));
+}
+
+void ch9329::send(keyboard_acpi const& p_data)
+{
+  auto bytes = p_data.get_data();
+  send_start_bytes(*m_uart, cmd_send_kb_media_data, 2);
+  hal::print(*m_uart, bytes);
+  auto sum_byte = calculate_sum(bytes, cmd_send_kb_media_data);
+  hal::print(*m_uart, std::to_array({ sum_byte }));
 }
 
 // mouse absolute functions
@@ -240,33 +245,7 @@ ch9329::keyboard_media& ch9329::keyboard_media::press_media_key(media_key p_key)
 {
   auto byte_num = (static_cast<uint8_t>(p_key) >> 3) + 1;
   auto bit_num = static_cast<uint8_t>(p_key) & 0b111;
-
-  switch (bit_num) {
-    case 0:
-      m_media_data[byte_num] = m_media_data[byte_num] | 0b1;
-      break;
-    case 1:
-      m_media_data[byte_num] = m_media_data[byte_num] | 0b10;
-      break;
-    case 2:
-      m_media_data[byte_num] = m_media_data[byte_num] | 0b100;
-      break;
-    case 3:
-      m_media_data[byte_num] = m_media_data[byte_num] | 0b1000;
-      break;
-    case 4:
-      m_media_data[byte_num] = m_media_data[byte_num] | 0b10000;
-      break;
-    case 5:
-      m_media_data[byte_num] = m_media_data[byte_num] | 0b100000;
-      break;
-    case 6:
-      m_media_data[byte_num] = m_media_data[byte_num] | 0b1000000;
-      break;
-    case 7:
-      m_media_data[byte_num] = m_media_data[byte_num] | 0b10000000;
-      break;
-  }
+  m_data[byte_num] |= 1 << bit_num;
   return *this;
 }
 
@@ -275,77 +254,34 @@ ch9329::keyboard_media& ch9329::keyboard_media::release_media_key(
 {
   auto byte_num = (static_cast<uint8_t>(p_key) >> 3) + 1;
   auto bit_num = static_cast<uint8_t>(p_key) & 0b111;
-
-  switch (bit_num) {
-    case 0:
-      m_media_data[byte_num] = m_media_data[byte_num] & 0b11111110;
-      break;
-    case 1:
-      m_media_data[byte_num] = m_media_data[byte_num] & 0b11111101;
-      break;
-    case 2:
-      m_media_data[byte_num] = m_media_data[byte_num] & 0b11111011;
-      break;
-    case 3:
-      m_media_data[byte_num] = m_media_data[byte_num] & 0b11110111;
-      break;
-    case 4:
-      m_media_data[byte_num] = m_media_data[byte_num] & 0b11101111;
-      break;
-    case 5:
-      m_media_data[byte_num] = m_media_data[byte_num] & 0b11011111;
-      break;
-    case 6:
-      m_media_data[byte_num] = m_media_data[byte_num] & 0b10111111;
-      break;
-    case 7:
-      m_media_data[byte_num] = m_media_data[byte_num] & 0b01111111;
-      break;
-  }
+  m_data[byte_num] &= ~(1 << bit_num);
   return *this;
 }
 
-ch9329::keyboard_media& ch9329::keyboard_media::release_all_media_keys()
+ch9329::keyboard_media& ch9329::keyboard_media::release_all_keys()
 {
-  m_media_data = { 0x01, 0x00, 0x00, 0x00 };
+  m_data = { 0x01, 0x00, 0x00, 0x00 };
   return *this;
 }
 
-ch9329::keyboard_media& ch9329::keyboard_media::press_acpi_key(acpi_key p_key)
+// keyboard acpi functions
+ch9329::keyboard_acpi& ch9329::keyboard_acpi::press_acpi_key(acpi_key p_key)
 {
-  switch (p_key) {
-    case acpi_key::power:
-      m_acpi_data[1] = m_acpi_data[1] | 0b001;
-      break;
-    case acpi_key::sleep:
-      m_acpi_data[1] = m_acpi_data[1] | 0b010;
-      break;
-    case acpi_key::wake_up:
-      m_acpi_data[1] = m_acpi_data[1] | 0b100;
-      break;
-  }
+  auto bit_num = static_cast<uint8_t>(p_key);
+  m_data[1] |= 1 << bit_num;
   return *this;
 }
 
-ch9329::keyboard_media& ch9329::keyboard_media::release_acpi_key(acpi_key p_key)
+ch9329::keyboard_acpi& ch9329::keyboard_acpi::release_acpi_key(acpi_key p_key)
 {
-  switch (p_key) {
-    case acpi_key::power:
-      m_acpi_data[1] = m_acpi_data[1] & 0b110;
-      break;
-    case acpi_key::sleep:
-      m_acpi_data[1] = m_acpi_data[1] & 0b101;
-      break;
-    case acpi_key::wake_up:
-      m_acpi_data[1] = m_acpi_data[1] & 0b011;
-      break;
-  }
+  auto bit_num = static_cast<uint8_t>(p_key);
+  m_data[1] &= ~(1 << bit_num);
   return *this;
 }
 
-ch9329::keyboard_media& ch9329::keyboard_media::release_all_acpi_keys()
+ch9329::keyboard_acpi& ch9329::keyboard_acpi::release_all_keys()
 {
-  m_acpi_data = { 0x02, 0x00 };
+  m_data = { 0x02, 0x00 };
   return *this;
 }
 

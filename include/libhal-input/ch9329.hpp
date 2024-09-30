@@ -215,49 +215,59 @@ public:
      *
      * @return keyboard_media&
      */
-    keyboard_media& release_all_media_keys();
+    keyboard_media& release_all_keys();
+    auto const& get_data() const
+    {
+      return m_data;
+    }
+
+  private:
+    std::array<hal::byte, 4> m_data = {};
+  };
+
+  /**
+   * @brief Holds data and functions related to using keyboard acpi commands
+   */
+  class keyboard_acpi
+  {
+  public:
+    /**
+     * @brief Construct a new keyboard acpi object
+     *
+     */
+    keyboard_acpi();
     /**
      * @brief Press an acpi key.
      *
-     * @param p_key acpi_key enum representing which key to press
-     * @return keyboard_media&
+     * @param p_key acpi_key enum representing which key to release
+     * @return keyboard_acpi&
      */
-    keyboard_media& press_acpi_key(acpi_key p_key);
+    keyboard_acpi& press_acpi_key(acpi_key p_key);
     /**
      * @brief Release an acpi key.
      *
      * @param p_key acpi_key enum representing which key to release
-     * @return keyboard_media&
+     * @return keyboard_acpi&
      */
-    keyboard_media& release_acpi_key(acpi_key p_key);
+    keyboard_acpi& release_acpi_key(acpi_key p_key);
     /**
      * @brief Release all acpi keys
      *
-     * @return keyboard_media&
+     * @return keyboard_acpi&
      */
-    keyboard_media& release_all_acpi_keys();
-    /**
-     * @brief Get the data array containing the control bytes for media keys
-     *
-     * @return auto const& Byte array containing control information
-     */
-    auto const& get_media_data() const
-    {
-      return m_media_data;
-    }
+    keyboard_acpi& release_all_keys();
     /**
      * @brief Get the data array containing the control bytes for acpi keys
      *
      * @return auto const& Byte array containing control information
      */
-    auto const& get_acpi_data() const
+    auto const& get_data() const
     {
-      return m_acpi_data;
+      return m_data;
     }
 
   private:
-    std::array<hal::byte, 4> m_media_data = {};
-    std::array<hal::byte, 2> m_acpi_data = {};
+    std::array<hal::byte, 2> m_data = {};
   };
 
   /**
@@ -346,9 +356,14 @@ public:
    * @brief Send keyboard media command
    *
    * @param p_data keyboard media object containing command bytes
-   * @param p_is_acpi is the command sending acpi key presses
    */
-  void send(keyboard_media const& p_data, bool p_is_acpi = false);
+  void send(keyboard_media const& p_data);
+  /**
+   * @brief Send keyboard acpi command
+   *
+   * @param p_data
+   */
+  void send(keyboard_acpi const& p_data);
   /**
    * @brief Send keyboard general command
    *
