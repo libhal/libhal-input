@@ -37,6 +37,30 @@ void application(resource_list& p_map)
   hal::input::ch9329::mouse_relative rel_mouse_control;
 
   hal::print(console, "Demo Application Starting...\n\n");
+  auto params = usb_control.get_parameters();
+  hal::print<32>(
+    console, "Chip working mode: %0X \n", params.chip_working_mode);
+  hal::print<32>(
+    console, "Communication mode: %0X \n", params.serial_communication_mode);
+  hal::print<32>(console, "Serial address: %0X \n", params.serial_address);
+  hal::print<32>(console, "Baud: %lu \n", params.serial_mode_baud_rate);
+  hal::print<32>(
+    console, "Packet Interval: %lu \n", params.serial_mode_packet_interval);
+  hal::print<32>(console, "Vendor: %000X \n", params.vendor_id);
+  hal::print<32>(console, "PID: %000X \n", params.p_id);
+  hal::print<32>(console,
+                 "KB upload interval: %lu \n",
+                 params.ascii_mode_kb_upload_interval);
+  hal::print<32>(
+    console, "KB release delay: %lu \n", params.ascii_mode_kb_release_delay);
+  hal::print<32>(
+    console, "KB auto enter: %0X \n", params.ascii_mode_kb_auto_enter);
+  hal::print<32>(
+    console, "USB string enable: %0X \n", params.usb_string_enable);
+  hal::print<32>(
+    console, "Fast Upload: %0X \n", params.ascii_mode_kb_fast_upload_mode);
+
+  hal::print(console, "Loop Starting...\n\n");
   bool btn_prev_state = false;
   while (true) {
     auto data = nunchuck.read();

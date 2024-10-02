@@ -14,10 +14,12 @@
 
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <libhal-input/ch9329_kb_bytes.hpp>
 #include <libhal/serial.hpp>
 #include <libhal/units.hpp>
+#include <span>
 
 namespace hal::input {
 /**
@@ -26,6 +28,8 @@ namespace hal::input {
  */
 class ch9329
 {
+
+public:
   struct chip_info
   {
     hal::byte version;
@@ -34,12 +38,60 @@ class ch9329
     bool caps_lock;
     bool scroll_lock;
   };
+
+  struct usb_string_descriptor
+  {
+    auto full_span()
+    {
+      return std::span(buffer);
+    }
+    auto received_data()
+    {
+      return std::span(buffer).first(length);
+    }
+    std::array<hal::byte, 23> buffer{};
+    std::size_t length = 0;
+  };
+
+  class ch9329_parameters
+  {
+  public:
+    ch9329_parameters(std::array<hal::byte, 50> p_config_bytes);
+    hal::byte set_parameters(ch9329_parameters p_parameters);
+    void set_config_bytes(std::array<hal::byte, 50> p_config_bytes)
+    {
+      m_config_bytes = p_config_bytes;
+    };
+    auto const& get_config_bytes() const
+    {
+      return m_config_bytes;
+    }
+    hal::byte chip_working_mode;
+    hal::byte serial_communication_mode;
+    hal::byte serial_address;
+    std::uint32_t serial_mode_baud_rate;
+    std::uint16_t serial_mode_packet_interval;
+    std::uint16_t vendor_id;
+    std::uint16_t p_id;
+    std::uint16_t ascii_mode_kb_upload_interval;
+    std::uint16_t ascii_mode_kb_release_delay;
+    hal::byte ascii_mode_kb_auto_enter;
+    std::uint32_t ascii_mode_kb_carriage_return_1;
+    std::uint32_t ascii_mode_kb_carriage_return_2;
+    std::uint32_t kb_start_filter_chars;
+    std::uint32_t kb_end_filter_chars;
+    hal::byte usb_string_enable;
+    hal::byte ascii_mode_kb_fast_upload_mode;
+
+  private:
+    std::array<hal::byte, 50> m_config_bytes = {};
+  };
+
   /**
    * @brief Holds data and functions related to using mouse absolute position
    * commands
    *
    */
-public:
   class mouse_absolute
   {
   public:
@@ -378,8 +430,18 @@ public:
    * @param p_data keyboard general object containing command bytes
    */
   void send(keyboard_general const& p_data);
+  hal::byte set_parameters(ch9329_parameters const& p_data);
+  ch9329_parameters get_parameters();
 
   chip_info get_info();
+  usb_string_descriptor get_manufacturer_descriptor();
+  usb_string_descriptor get_product_descriptor();
+  usb_string_descriptor get_serial_number_descriptor();
+  hal::byte set_manufacturer_descriptor(std::string_view p_string);
+  hal::byte set_product_descriptor(std::string_view p_string);
+  hal::byte set_serial_number_descriptor(std::string_view p_string);
+  hal::byte restore_factory_default_settings();
+  hal::byte reset();
 
 private:
   hal::serial* m_uart;
