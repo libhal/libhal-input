@@ -37,20 +37,6 @@ void application(resource_list& p_map)
   hal::input::ch9329::mouse_relative rel_mouse_control;
 
   hal::print(console, "Demo Application Starting...\n\n");
-  auto params = usb_control.get_parameters();
-  hal::print<32>(
-    console, "Chip working mode: %0X \n", params.get_chip_working_mode());
-  hal::print<32>(console,
-                 "Communication mode: %0X \n",
-                 params.get_serial_communication_mode());
-  hal::print<32>(console, "Baud: %lu \n", params.get_serial_mode_baud_rate());
-  params.set_serial_mode_baud_rate(115200);
-  auto response = usb_control.set_parameters(params);
-  params = usb_control.get_parameters();
-  hal::print<32>(console, "set params response: %0X \n", response);
-  hal::print<32>(console, "Baud: %lu \n", params.get_serial_mode_baud_rate());
-
-  hal::print(console, "Loop Starting...\n\n");
   bool btn_prev_state = false;
   while (true) {
     auto data = nunchuck.read();
