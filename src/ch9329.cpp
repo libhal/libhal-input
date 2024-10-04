@@ -47,62 +47,16 @@ ch9329::ch9329(hal::serial& p_uart)
 
 ch9329::ch9329_parameters::ch9329_parameters(
   std::array<hal::byte, 50> p_config_bytes)
-  : m_config_bytes(p_config_bytes)
-{};
+  : m_config_bytes(p_config_bytes){};
 
 ch9329::ch9329_parameters::ch9329_parameters()
 {
   m_config_bytes = {
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
   };
 }
 
@@ -350,6 +304,7 @@ hal::byte ch9329::set_parameters(ch9329_parameters const& p_parameters)
   send_start_bytes(*m_uart, cmd_set_para_cfg, 50);
   hal::print(*m_uart, bytes);
   auto sum_byte = calculate_sum(bytes, cmd_set_para_cfg);
+  sum_byte += 0x32;
   hal::print(*m_uart, std::to_array({ sum_byte }));
   std::array<hal::byte, 7> response;
   hal::read(*m_uart, response, hal::never_timeout());
@@ -590,103 +545,149 @@ ch9329::keyboard_general& ch9329::keyboard_general::release_all_keys()
   return *this;
 }
 
-void ch9329::ch9329_parameters::set_chip_working_mode(hal::byte p_working_mode)
+ch9329::ch9329_parameters& ch9329::ch9329_parameters::set_config_bytes(
+  std::array<hal::byte, 50> p_config_bytes)
+{
+  m_config_bytes = p_config_bytes;
+  return *this;
+};
+
+ch9329::ch9329_parameters& ch9329::ch9329_parameters::set_chip_working_mode(
+  hal::byte p_working_mode)
 {
   m_config_bytes[0] = p_working_mode;
+  return *this;
 };
-void ch9329::ch9329_parameters::set_serial_communication_mode(hal::byte p_communication_mode)
+ch9329::ch9329_parameters&
+ch9329::ch9329_parameters::set_serial_communication_mode(
+  hal::byte p_communication_mode)
 {
   m_config_bytes[1] = p_communication_mode;
+  return *this;
 };
-void ch9329::ch9329_parameters::set_serial_address(hal::byte p_serial)
+ch9329::ch9329_parameters& ch9329::ch9329_parameters::set_serial_address(
+  hal::byte p_serial)
 {
   m_config_bytes[2] = p_serial;
+  return *this;
 };
-void ch9329::ch9329_parameters::set_serial_mode_baud_rate(std::uint32_t p_baud)
+ch9329::ch9329_parameters& ch9329::ch9329_parameters::set_serial_mode_baud_rate(
+  std::uint32_t p_baud)
 {
   m_config_bytes[3] = static_cast<hal::byte>(p_baud >> 24);
   m_config_bytes[4] = static_cast<hal::byte>(p_baud >> 16);
   m_config_bytes[5] = static_cast<hal::byte>(p_baud >> 8);
   m_config_bytes[6] = static_cast<hal::byte>(p_baud);
+  return *this;
 };
-void ch9329::ch9329_parameters::set_serial_mode_packet_interval(std::uint16_t p_packet_interval)
+ch9329::ch9329_parameters&
+ch9329::ch9329_parameters::set_serial_mode_packet_interval(
+  std::uint16_t p_packet_interval)
 {
   m_config_bytes[9] = static_cast<hal::byte>(p_packet_interval >> 8);
   m_config_bytes[10] = static_cast<hal::byte>(p_packet_interval);
+  return *this;
 };
-void ch9329::ch9329_parameters::set_vendor_id(std::uint16_t p_vid)
+ch9329::ch9329_parameters& ch9329::ch9329_parameters::set_vendor_id(
+  std::uint16_t p_vid)
 {
   m_config_bytes[11] = static_cast<hal::byte>(p_vid >> 8);
   m_config_bytes[12] = static_cast<hal::byte>(p_vid);
+  return *this;
 };
-void ch9329::ch9329_parameters::set_product_id(std::uint16_t p_id)
+ch9329::ch9329_parameters& ch9329::ch9329_parameters::set_product_id(
+  std::uint16_t p_id)
 {
   m_config_bytes[13] = static_cast<hal::byte>(p_id >> 8);
   m_config_bytes[14] = static_cast<hal::byte>(p_id);
+  return *this;
 };
-void ch9329::ch9329_parameters::set_ascii_mode_kb_upload_interval(std::uint16_t p_upload_interval)
+ch9329::ch9329_parameters&
+ch9329::ch9329_parameters::set_ascii_mode_kb_upload_interval(
+  std::uint16_t p_upload_interval)
 {
-  m_config_bytes[15] =static_cast<hal::byte>(p_upload_interval >> 8);
-  m_config_bytes[16] =static_cast<hal::byte>(p_upload_interval);
+  m_config_bytes[15] = static_cast<hal::byte>(p_upload_interval >> 8);
+  m_config_bytes[16] = static_cast<hal::byte>(p_upload_interval);
+  return *this;
 };
-void ch9329::ch9329_parameters::set_ascii_mode_kb_release_delay(std::uint16_t p_release_dealy)
+ch9329::ch9329_parameters&
+ch9329::ch9329_parameters::set_ascii_mode_kb_release_delay(
+  std::uint16_t p_release_dealy)
 {
   m_config_bytes[17] = static_cast<hal::byte>(p_release_dealy >> 8);
   m_config_bytes[18] = static_cast<hal::byte>(p_release_dealy);
+  return *this;
 };
-void ch9329::ch9329_parameters::set_ascii_mode_kb_auto_enter(hal::byte p_auto_enter)
+ch9329::ch9329_parameters&
+ch9329::ch9329_parameters::set_ascii_mode_kb_auto_enter(hal::byte p_auto_enter)
 {
   m_config_bytes[19] = p_auto_enter;
+  return *this;
 };
-void ch9329::ch9329_parameters::set_ascii_mode_kb_carriage_return_1(std::uint32_t p_carriage_return)
+ch9329::ch9329_parameters&
+ch9329::ch9329_parameters::set_ascii_mode_kb_carriage_return_1(
+  std::uint32_t p_carriage_return)
 {
-  m_config_bytes[20] =static_cast<hal::byte>(p_carriage_return >> 24);
-  m_config_bytes[21] =static_cast<hal::byte>(p_carriage_return >> 16);
-  m_config_bytes[22] =static_cast<hal::byte>(p_carriage_return >> 8);
-  m_config_bytes[23] =static_cast<hal::byte>(p_carriage_return);
+  m_config_bytes[20] = static_cast<hal::byte>(p_carriage_return >> 24);
+  m_config_bytes[21] = static_cast<hal::byte>(p_carriage_return >> 16);
+  m_config_bytes[22] = static_cast<hal::byte>(p_carriage_return >> 8);
+  m_config_bytes[23] = static_cast<hal::byte>(p_carriage_return);
+  return *this;
 };
-void ch9329::ch9329_parameters::set_ascii_mode_kb_carriage_return_2(std::uint32_t p_carriage_return)
+ch9329::ch9329_parameters&
+ch9329::ch9329_parameters::set_ascii_mode_kb_carriage_return_2(
+  std::uint32_t p_carriage_return)
 {
-  m_config_bytes[24] =static_cast<hal::byte>(p_carriage_return >> 24);
-  m_config_bytes[25] =static_cast<hal::byte>(p_carriage_return >> 16);
-  m_config_bytes[26] =static_cast<hal::byte>(p_carriage_return >> 8);
-  m_config_bytes[27] =static_cast<hal::byte>(p_carriage_return);
+  m_config_bytes[24] = static_cast<hal::byte>(p_carriage_return >> 24);
+  m_config_bytes[25] = static_cast<hal::byte>(p_carriage_return >> 16);
+  m_config_bytes[26] = static_cast<hal::byte>(p_carriage_return >> 8);
+  m_config_bytes[27] = static_cast<hal::byte>(p_carriage_return);
+  return *this;
 };
-void ch9329::ch9329_parameters::set_kb_start_filter_chars(std::uint32_t p_start_filters)
+ch9329::ch9329_parameters& ch9329::ch9329_parameters::set_kb_start_filter_chars(
+  std::uint32_t p_start_filters)
 {
-  m_config_bytes[28] =static_cast<hal::byte>(p_start_filters >> 24);
-  m_config_bytes[29] =static_cast<hal::byte>(p_start_filters >> 16);
-  m_config_bytes[30] =static_cast<hal::byte>(p_start_filters >> 8);
-  m_config_bytes[31] =static_cast<hal::byte>(p_start_filters);
+  m_config_bytes[28] = static_cast<hal::byte>(p_start_filters >> 24);
+  m_config_bytes[29] = static_cast<hal::byte>(p_start_filters >> 16);
+  m_config_bytes[30] = static_cast<hal::byte>(p_start_filters >> 8);
+  m_config_bytes[31] = static_cast<hal::byte>(p_start_filters);
+  return *this;
 };
-void ch9329::ch9329_parameters::set_kb_end_filter_chars(std::uint32_t p_end_filters)
+ch9329::ch9329_parameters& ch9329::ch9329_parameters::set_kb_end_filter_chars(
+  std::uint32_t p_end_filters)
 {
-  m_config_bytes[32] =static_cast<hal::byte>(p_end_filters >> 24);
-  m_config_bytes[33] =static_cast<hal::byte>(p_end_filters >> 16);
-  m_config_bytes[34] =static_cast<hal::byte>(p_end_filters >> 8);
-  m_config_bytes[35] =static_cast<hal::byte>(p_end_filters);
+  m_config_bytes[32] = static_cast<hal::byte>(p_end_filters >> 24);
+  m_config_bytes[33] = static_cast<hal::byte>(p_end_filters >> 16);
+  m_config_bytes[34] = static_cast<hal::byte>(p_end_filters >> 8);
+  m_config_bytes[35] = static_cast<hal::byte>(p_end_filters);
+  return *this;
 };
-void ch9329::ch9329_parameters::set_usb_string_enable(hal::byte p_enable)
+ch9329::ch9329_parameters& ch9329::ch9329_parameters::set_usb_string_enable(
+  hal::byte p_enable)
 {
   m_config_bytes[36] = p_enable;
+  return *this;
 };
-void ch9329::ch9329_parameters::set_ascii_mode_kb_fast_upload_mode(hal::byte p_fast_upload)
+ch9329::ch9329_parameters&
+ch9329::ch9329_parameters::set_ascii_mode_kb_fast_upload_mode(
+  hal::byte p_fast_upload)
 {
   m_config_bytes[37] = p_fast_upload;
+  return *this;
 };
-hal::byte ch9329::ch9329_parameters::get_chip_working_mode() 
+hal::byte ch9329::ch9329_parameters::get_chip_working_mode()
 {
   return m_config_bytes[0];
 };
-hal::byte ch9329::ch9329_parameters::get_serial_communication_mode() 
+hal::byte ch9329::ch9329_parameters::get_serial_communication_mode()
 {
   return m_config_bytes[1];
 };
-hal::byte ch9329::ch9329_parameters::get_serial_address() 
+hal::byte ch9329::ch9329_parameters::get_serial_address()
 {
   return m_config_bytes[2];
 };
-std::uint32_t ch9329::ch9329_parameters::get_serial_mode_baud_rate() 
+std::uint32_t ch9329::ch9329_parameters::get_serial_mode_baud_rate()
 {
   std::uint32_t baud = m_config_bytes[3];
   baud = (baud << 8) | m_config_bytes[4];
@@ -694,31 +695,31 @@ std::uint32_t ch9329::ch9329_parameters::get_serial_mode_baud_rate()
   baud = (baud << 8) | m_config_bytes[6];
   return baud;
 };
-std::uint16_t ch9329::ch9329_parameters::get_serial_mode_packet_interval() 
+std::uint16_t ch9329::ch9329_parameters::get_serial_mode_packet_interval()
 {
   return static_cast<uint16_t>((m_config_bytes[9] << 8) | m_config_bytes[10]);
 };
-std::uint16_t ch9329::ch9329_parameters::get_vendor_id() 
+std::uint16_t ch9329::ch9329_parameters::get_vendor_id()
 {
   return static_cast<uint16_t>((m_config_bytes[11] << 8) | m_config_bytes[12]);
 };
-std::uint16_t ch9329::ch9329_parameters::get_product_id() 
+std::uint16_t ch9329::ch9329_parameters::get_product_id()
 {
   return static_cast<uint16_t>((m_config_bytes[13] << 8) | m_config_bytes[14]);
 };
-std::uint16_t ch9329::ch9329_parameters::get_ascii_mode_kb_upload_interval() 
+std::uint16_t ch9329::ch9329_parameters::get_ascii_mode_kb_upload_interval()
 {
   return static_cast<uint16_t>((m_config_bytes[15] << 8) | m_config_bytes[16]);
 };
-std::uint16_t ch9329::ch9329_parameters::get_ascii_mode_kb_release_delay() 
+std::uint16_t ch9329::ch9329_parameters::get_ascii_mode_kb_release_delay()
 {
   return static_cast<uint16_t>((m_config_bytes[17] << 8) | m_config_bytes[18]);
 };
-hal::byte ch9329::ch9329_parameters::get_ascii_mode_kb_auto_enter() 
+hal::byte ch9329::ch9329_parameters::get_ascii_mode_kb_auto_enter()
 {
   return m_config_bytes[19];
 };
-std::uint32_t ch9329::ch9329_parameters::get_ascii_mode_kb_carriage_return_1() 
+std::uint32_t ch9329::ch9329_parameters::get_ascii_mode_kb_carriage_return_1()
 {
   std::uint32_t carriage_ret_1 = m_config_bytes[20];
   carriage_ret_1 = (carriage_ret_1 << 8) | m_config_bytes[21];
@@ -726,7 +727,7 @@ std::uint32_t ch9329::ch9329_parameters::get_ascii_mode_kb_carriage_return_1()
   carriage_ret_1 = (carriage_ret_1 << 8) | m_config_bytes[23];
   return carriage_ret_1;
 };
-std::uint32_t ch9329::ch9329_parameters::get_ascii_mode_kb_carriage_return_2() 
+std::uint32_t ch9329::ch9329_parameters::get_ascii_mode_kb_carriage_return_2()
 {
   std::uint32_t carriage_ret_2 = m_config_bytes[24];
   carriage_ret_2 = (carriage_ret_2 << 8) | m_config_bytes[25];
@@ -734,7 +735,7 @@ std::uint32_t ch9329::ch9329_parameters::get_ascii_mode_kb_carriage_return_2()
   carriage_ret_2 = (carriage_ret_2 << 8) | m_config_bytes[27];
   return carriage_ret_2;
 };
-std::uint32_t ch9329::ch9329_parameters::get_kb_start_filter_chars() 
+std::uint32_t ch9329::ch9329_parameters::get_kb_start_filter_chars()
 {
   std::uint32_t start_filters = m_config_bytes[28];
   start_filters = (start_filters << 8) | m_config_bytes[29];
@@ -742,7 +743,7 @@ std::uint32_t ch9329::ch9329_parameters::get_kb_start_filter_chars()
   start_filters = (start_filters << 8) | m_config_bytes[31];
   return start_filters;
 };
-std::uint32_t ch9329::ch9329_parameters::get_kb_end_filter_chars() 
+std::uint32_t ch9329::ch9329_parameters::get_kb_end_filter_chars()
 {
   std::uint32_t end_filters = m_config_bytes[32];
   end_filters = (end_filters << 8) | m_config_bytes[33];
@@ -750,11 +751,11 @@ std::uint32_t ch9329::ch9329_parameters::get_kb_end_filter_chars()
   end_filters = (end_filters << 8) | m_config_bytes[35];
   return end_filters;
 };
-hal::byte ch9329::ch9329_parameters::get_usb_string_enable() 
+hal::byte ch9329::ch9329_parameters::get_usb_string_enable()
 {
   return m_config_bytes[36];
 };
-hal::byte ch9329::ch9329_parameters::get_ascii_mode_kb_fast_upload_mode() 
+hal::byte ch9329::ch9329_parameters::get_ascii_mode_kb_fast_upload_mode()
 {
   return m_config_bytes[37];
 };
