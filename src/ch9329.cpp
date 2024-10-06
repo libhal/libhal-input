@@ -12,9 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <cstdint>
+
 #include <algorithm>
 #include <array>
-#include <cstdint>
+#include <span>
 
 #include <libhal-input/ch9329.hpp>
 #include <libhal-util/bit.hpp>
@@ -23,7 +25,6 @@
 #include <libhal/serial.hpp>
 #include <libhal/timeout.hpp>
 #include <libhal/units.hpp>
-#include <span>
 
 namespace hal::input {
 
@@ -316,7 +317,6 @@ ch9329::keyboard_general& ch9329::keyboard_general::press_control_key(
 {
 
   hal::byte mask = (1 << hal::value(p_key));
-  ;
   m_data[0] = m_data[0] | mask;
   return *this;
 }
