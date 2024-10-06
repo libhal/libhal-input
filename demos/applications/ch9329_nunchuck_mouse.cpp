@@ -37,26 +37,14 @@ void application(resource_list& p_map)
   hal::input::ch9329::mouse_relative rel_mouse_control;
 
   hal::print(console, "Demo Application Starting...\n\n");
-  bool btn_prev_state = false;
   while (true) {
     auto data = nunchuck.read();
     std::int8_t x = (data.joystick_x() - 128) / sensitivity;
     std::int8_t y = -(data.joystick_y() - 128) / sensitivity;
-    rel_mouse_control.move(x, y).left_button(data.c_button());
+    rel_mouse_control.move(x, y)
+      .left_button(data.c_button())
+      .right_button(data.z_button());
     usb_control.send(rel_mouse_control);
-
-    // only send keyboard commands if btn state has changed
-    bool z_button_state = data.z_button();
-    if (z_button_state && z_button_state != btn_prev_state) {
-      btn_prev_state = z_button_state;
-      kb_control.press_normal_key(normal_key::a, 1);
-      usb_control.send(kb_control);
-    }
-    if (!z_button_state && z_button_state != btn_prev_state) {
-      btn_prev_state = z_button_state;
-      kb_control.release_normal_key(normal_key::a);
-      usb_control.send(kb_control);
-    }
     hal::delay(clock, 1ms);
   }
 }

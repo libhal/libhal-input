@@ -16,7 +16,7 @@
 
 #include <libhal/units.hpp>
 
-enum class control_key_bit : std::uint8_t
+enum class control_key : std::uint8_t
 {
   left_control = 0,
   left_shift = 1,

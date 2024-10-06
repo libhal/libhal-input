@@ -297,7 +297,7 @@ public:
      * @param p_key control_key_bit enum value representing which key to press
      * @return keyboard_general&
      */
-    keyboard_general& press_control_key(control_key_bit p_key);
+    keyboard_general& press_control_key(control_key p_key);
     /**
      * @brief Press a normal key.
      *
@@ -313,7 +313,7 @@ public:
      * @param p_key control_key_bit enum value representing which key to release
      * @return keyboard_general&
      */
-    keyboard_general& release_control_key(control_key_bit p_key);
+    keyboard_general& release_control_key(control_key p_key);
     /**
      * @brief Release a normal key.
      *

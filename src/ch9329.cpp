@@ -18,6 +18,7 @@
 
 #include <libhal-input/ch9329.hpp>
 #include <libhal-util/bit.hpp>
+#include <libhal-util/enum.hpp>
 #include <libhal-util/serial.hpp>
 #include <libhal/serial.hpp>
 #include <libhal/timeout.hpp>
@@ -102,7 +103,9 @@ void send_start_bytes(serial& p_serial,
   hal::print(p_serial, start_bytes);
 }
 
-hal::byte calculate_sum(std::span<hal::byte> p_bytes, hal::byte p_command)
+hal::byte calculate_sum(std::span<hal::byte> p_bytes,
+                        hal::byte p_command,
+                        std::uint8_t p_custom_length = 0)
 {
   std::uint8_t sum_byte = header_byte_1;
   sum_byte += header_byte_2;
@@ -112,6 +115,7 @@ hal::byte calculate_sum(std::span<hal::byte> p_bytes, hal::byte p_command)
   for (hal::byte byte : p_bytes) {
     sum_byte += byte;
   }
+  sum_byte += p_custom_length;
   return sum_byte;
 }
 
@@ -122,7 +126,7 @@ void send_command_with_bytes(std::span<hal::byte> p_bytes,
 {
   send_start_bytes(p_serial, p_command, p_size);
   hal::print(p_serial, p_bytes);
-  auto sum_byte = calculate_sum(p_bytes, p_command);
+  auto sum_byte = calculate_sum(p_bytes, p_command, p_size);
   hal::print(p_serial, std::to_array({ sum_byte }));
 }
 
@@ -308,7 +312,7 @@ ch9329::keyboard_acpi& ch9329::keyboard_acpi::release_all_keys()
 
 // keyboard general functions
 ch9329::keyboard_general& ch9329::keyboard_general::press_control_key(
-  control_key_bit p_key)
+  control_key p_key)
 {
 
   hal::byte mask = (1 << hal::value(p_key));
@@ -318,10 +322,9 @@ ch9329::keyboard_general& ch9329::keyboard_general::press_control_key(
 }
 
 ch9329::keyboard_general& ch9329::keyboard_general::release_control_key(
-  control_key_bit p_key)
+  control_key p_key)
 {
   hal::byte mask = ~(1 << hal::value(p_key));
-  ;
   m_data[0] = m_data[0] & mask;
   return *this;
 }
@@ -330,7 +333,9 @@ ch9329::keyboard_general& ch9329::keyboard_general::press_normal_key(
   normal_key p_key,
   uint8_t p_slot)
 {
-  std::clamp(p_slot, 1, 6);
+  constexpr std::uint8_t slot_min = 1;
+  constexpr std::uint8_t slot_max = 6;
+  p_slot = std::clamp(p_slot, slot_min, slot_max);
   // first byte of m_data is reserved, first slot starts at position 2
   m_data[p_slot + 1] = static_cast<hal::byte>(p_key);
   return *this;
