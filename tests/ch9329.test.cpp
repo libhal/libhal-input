@@ -22,7 +22,7 @@ void ch9329_test()
   using namespace boost::ut;
   using namespace std::literals;
 
-  "ch9329::create()"_test = []() {
+  "ch9329::ch9329()"_test = []() {
     // Setup
     // Exercise
     // Verify

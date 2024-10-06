@@ -15,7 +15,7 @@
 #pragma once
 
 #include <cstdint>
-#include <libhal-input/ch9329_kb_bytes.hpp>
+#include <libhal-input/ch9329_keyboard_constants.hpp>
 #include <libhal/serial.hpp>
 #include <libhal/units.hpp>
 

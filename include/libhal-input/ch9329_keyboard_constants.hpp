@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <cstdint>
+
 #include <libhal/units.hpp>
 
 enum class control_key_bit : std::uint8_t
