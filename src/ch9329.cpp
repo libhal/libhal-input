@@ -87,7 +87,9 @@ hal::byte get_size_byte(hal::byte p_command)
   return 0x00;
 }
 
-void send_start_bytes(serial& p_serial, hal::byte p_command, uint8_t p_size = 0)
+void send_start_bytes(serial& p_serial,
+                      hal::byte p_command,
+                      std::uint8_t p_size = 0)
 {
   std::array<hal::byte, header_frame_size> start_bytes = {
     header_byte_1, header_byte_2, address_byte, p_command
@@ -116,7 +118,7 @@ hal::byte calculate_sum(std::span<hal::byte> p_bytes, hal::byte p_command)
 void send_command_with_bytes(std::span<hal::byte> p_bytes,
                              hal::byte p_command,
                              serial& p_serial,
-                             uint8_t p_size = 0)
+                             std::uint8_t p_size = 0)
 {
   send_start_bytes(p_serial, p_command, p_size);
   hal::print(p_serial, p_bytes);
@@ -199,7 +201,6 @@ ch9329::mouse_absolute& ch9329::mouse_absolute::left_button(bool p_pressed)
 {
   constexpr auto left_button_mask = hal::bit_mask::from<0>();
   hal::bit_modify(m_data[1]).insert<left_button_mask>(p_pressed);
-  return *this;
   return *this;
 }
 
