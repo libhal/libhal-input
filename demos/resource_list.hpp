@@ -26,6 +26,7 @@ struct resource_list
 {
   hal::callback<void()> reset;
   std::optional<hal::serial*> console = std::nullopt;
+  std::optional<hal::serial*> uart3 = std::nullopt;
   std::optional<hal::steady_clock*> clock = std::nullopt;
   std::optional<hal::output_pin*> status_led = std::nullopt;
   // Add more driver interfaces here ...

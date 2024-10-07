@@ -19,11 +19,13 @@ libhal_test_and_make_library(
   LIBRARY_NAME libhal-input
 
   SOURCES
+  src/ch9329.cpp
   src/input.cpp
   src/gamepad/nunchuck.cpp
 
   TEST_SOURCES
   tests/gamepad/nunchuck.test.cpp
+  tests/ch9329.test.cpp
   tests/input.test.cpp
   tests/main.test.cpp
 )

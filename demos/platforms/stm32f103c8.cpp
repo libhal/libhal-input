@@ -41,6 +41,11 @@ resource_list initialize_platform()
                                   hal::serial::settings{
                                     .baud_rate = 115200,
                                   });
+  static hal::stm32f1::uart uart3(hal::port<3>,
+                                  hal::buffer<128>,
+                                  hal::serial::settings{
+                                    .baud_rate = 9600,
+                                  });
 
   static hal::stm32f1::output_pin led('C', 13);
   static hal::stm32f1::output_pin sda('B', 7);
@@ -55,6 +60,7 @@ resource_list initialize_platform()
   return {
     .reset = +[]() { hal::cortex_m::reset(); },
     .console = &uart1,
+    .uart3 = &uart3,
     .clock = &counter,
     .status_led = &led,
     .i2c = &bit_bang_i2c,
