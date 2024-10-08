@@ -45,21 +45,31 @@ constexpr hal::byte cmd_send_ms_rel_data = 0x05;
 constexpr hal::byte cmd_get_para_cfg = 0x08;
 constexpr hal::byte cmd_set_para_cfg = 0x09;
 
+constexpr auto header_frame_size = 5;
+constexpr auto info_response_length = 14;
+constexpr auto response_length = 7;
+constexpr auto response_byte = 5;
+constexpr auto response_header_length = 5;
+constexpr auto check_sum_read_length = 1;
+constexpr auto string_header_length = 2;
+constexpr auto parameters_length = 50;
+
 ch9329::ch9329(hal::serial& p_uart)
   : m_uart(&p_uart)
 {
 }
 
 ch9329::ch9329_parameters::ch9329_parameters(
-  std::array<hal::byte, 50> p_config_bytes)
+  std::array<hal::byte, parameters_length> p_config_bytes)
   : m_config_bytes(p_config_bytes){};
 
 ch9329::ch9329_parameters::ch9329_parameters()
 {
+  // these are the default parameters
   m_config_bytes = {
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x80, 0x80, 0x00, 0x00, 0x00, 0x25, 0x80, 0x08, 0x00, 0x00,
+    0x03, 0x86, 0x1A, 0x29, 0xE1, 0x00, 0x00, 0x00, 0x01, 0x00,
+    0x0D, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
   };
@@ -185,16 +195,16 @@ void ch9329::send(keyboard_acpi const& p_data)
 
 ch9329::chip_info ch9329::get_info()
 {
-  std::array<hal::byte, 14> response{};
+  std::array<hal::byte, info_response_length> response{};
   send_start_bytes(*m_uart, cmd_get_info);
   hal::print(*m_uart, std::to_array({ (hal::byte)0x03 }));  // sum byte
   hal::read(*m_uart, response, hal::never_timeout());
   chip_info info = {};
   info.version = response[5];
   info.enumeration_status = response[6];
-  info.num_lock = response[7] & 0b1;
-  info.caps_lock = response[7] & 0b10;
-  info.scroll_lock = response[7] & 0b100;
+  info.num_lock = response[7] & (1 << hal::value(lock_status::num_lock));
+  info.caps_lock = response[7] & (1 << hal::value(lock_status::caps_lock));
+  info.scroll_lock = response[7] & (1 << hal::value(lock_status::scroll_lock));
   return info;
 }
 
@@ -203,15 +213,12 @@ ch9329::usb_string_descriptor get_usb_string_descriptor(serial& p_serial,
 {
   ch9329::usb_string_descriptor str;
   auto bytes = std::to_array({ p_string_type });
-  send_start_bytes(p_serial, cmd_get_usb_string);
-  hal::print(p_serial, bytes);
-  auto sum_byte = calculate_sum(bytes, cmd_get_usb_string);
-  hal::print(p_serial, std::to_array({ sum_byte }));
-  std::array<hal::byte, 7> header_bytes;
+  send_command_with_bytes(bytes, cmd_get_usb_string, p_serial);
+  std::array<hal::byte, response_length> header_bytes;
   hal::read(p_serial, header_bytes, hal::never_timeout());
-  str.length = header_bytes[6];
+  str.length = header_bytes.back();
   hal::read(p_serial, str.received_data(), hal::never_timeout());
-  std::array<hal::byte, 1> check_sum;
+  std::array<hal::byte, check_sum_read_length> check_sum;
   hal::read(p_serial, check_sum, hal::never_timeout());
   return str;
 }
@@ -221,19 +228,24 @@ hal::byte set_usb_string_descriptor(serial& p_serial,
                                     std::string_view p_string)
 {
   uint8_t string_length = p_string.length();
-  auto bytes = std::to_array({ p_string_type, string_length });
-  send_start_bytes(p_serial, cmd_set_usb_string, string_length + 2);
-  hal::print(p_serial, bytes);
+  auto string_header = std::to_array({ p_string_type, string_length });
+  send_start_bytes(
+    p_serial, cmd_set_usb_string, string_length + string_header_length);
+  hal::print(p_serial, string_header);
   hal::print(p_serial, p_string);
-  auto sum_byte = calculate_sum(bytes, cmd_set_usb_string);
-  sum_byte += (string_length + 2);
+  // get the sum up to the end of the string header
+  auto sum_byte = calculate_sum(string_header, cmd_set_usb_string);
+  // add string header bytes to sum
+  sum_byte += (string_length + string_header_length);
+  // add chars in string to sum
   for (hal::byte byte : p_string) {
     sum_byte += byte;
   }
+  // send sum byte
   hal::print(p_serial, std::to_array({ sum_byte }));
-  std::array<hal::byte, 7> response;
+  std::array<hal::byte, response_length> response;
   hal::read(p_serial, response, hal::never_timeout());
-  return response[5];
+  return response[response_byte];
 }
 
 ch9329::usb_string_descriptor ch9329::get_manufacturer_descriptor()
@@ -271,9 +283,9 @@ hal::byte ch9329::restore_factory_default_settings()
   send_start_bytes(*m_uart, cmd_restore_factory_default_settings);
   auto sum_byte = calculate_sum({}, cmd_restore_factory_default_settings);
   hal::print(*m_uart, std::to_array({ sum_byte }));
-  std::array<hal::byte, 7> response;
+  std::array<hal::byte, response_length> response;
   hal::read(*m_uart, response, hal::never_timeout());
-  return response[5];
+  return response[response_byte];
 }
 
 hal::byte ch9329::reset()
@@ -281,9 +293,9 @@ hal::byte ch9329::reset()
   send_start_bytes(*m_uart, cmd_reset);
   auto sum_byte = calculate_sum({}, cmd_reset);
   hal::print(*m_uart, std::to_array({ sum_byte }));
-  std::array<hal::byte, 7> response;
+  std::array<hal::byte, response_length> response;
   hal::read(*m_uart, response, hal::never_timeout());
-  return response[5];
+  return response[response_byte];
 }
 
 ch9329::ch9329_parameters ch9329::get_parameters()
@@ -291,9 +303,9 @@ ch9329::ch9329_parameters ch9329::get_parameters()
   send_start_bytes(*m_uart, cmd_get_para_cfg);
   auto sum_byte = calculate_sum({}, cmd_get_para_cfg);
   hal::print(*m_uart, std::to_array({ sum_byte }));
-  std::array<hal::byte, 5> response_header;
-  std::array<hal::byte, 50> response;
-  std::array<hal::byte, 1> response_sum;
+  std::array<hal::byte, response_header_length> response_header;
+  std::array<hal::byte, parameters_length> response;
+  std::array<hal::byte, check_sum_read_length> response_sum;
 
   hal::read(*m_uart, response_header, hal::never_timeout());
   hal::read(*m_uart, response, hal::never_timeout());
@@ -307,14 +319,14 @@ ch9329::ch9329_parameters ch9329::get_parameters()
 hal::byte ch9329::set_parameters(ch9329_parameters const& p_parameters)
 {
   auto bytes = p_parameters.get_config_bytes();
-  send_start_bytes(*m_uart, cmd_set_para_cfg, 50);
+  send_start_bytes(*m_uart, cmd_set_para_cfg, parameters_length);
   hal::print(*m_uart, bytes);
   auto sum_byte = calculate_sum(bytes, cmd_set_para_cfg);
-  sum_byte += 0x32;
+  sum_byte += parameters_length;
   hal::print(*m_uart, std::to_array({ sum_byte }));
-  std::array<hal::byte, 7> response;
+  std::array<hal::byte, response_length> response;
   hal::read(*m_uart, response, hal::never_timeout());
-  return response[5];
+  return response[response_byte];
 }
 
 // mouse absolute functions
@@ -505,23 +517,23 @@ ch9329::keyboard_general& ch9329::keyboard_general::release_all_keys()
 }
 
 ch9329::ch9329_parameters& ch9329::ch9329_parameters::set_config_bytes(
-  std::array<hal::byte, 50> p_config_bytes)
+  std::array<hal::byte, parameters_length> p_config_bytes)
 {
   m_config_bytes = p_config_bytes;
   return *this;
 };
 
 ch9329::ch9329_parameters& ch9329::ch9329_parameters::set_chip_working_mode(
-  hal::byte p_working_mode)
+  working_mode p_working_mode)
 {
-  m_config_bytes[0] = p_working_mode;
+  m_config_bytes[0] = static_cast<hal::byte>(p_working_mode);
   return *this;
 };
 ch9329::ch9329_parameters&
 ch9329::ch9329_parameters::set_serial_communication_mode(
-  hal::byte p_communication_mode)
+  communication_mode p_communication_mode)
 {
-  m_config_bytes[1] = p_communication_mode;
+  m_config_bytes[1] = static_cast<hal::byte>(p_communication_mode);
   return *this;
 };
 ch9329::ch9329_parameters& ch9329::ch9329_parameters::set_serial_address(
@@ -578,9 +590,10 @@ ch9329::ch9329_parameters::set_ascii_mode_kb_release_delay(
   return *this;
 };
 ch9329::ch9329_parameters&
-ch9329::ch9329_parameters::set_ascii_mode_kb_auto_enter(hal::byte p_auto_enter)
+ch9329::ch9329_parameters::set_ascii_mode_kb_auto_enter(bool p_auto_enter)
 {
-  m_config_bytes[19] = p_auto_enter;
+  m_config_bytes[19] =
+    static_cast<hal::byte>(p_auto_enter);  // TODO: does this work?
   return *this;
 };
 ch9329::ch9329_parameters&
@@ -604,43 +617,50 @@ ch9329::ch9329_parameters::set_ascii_mode_kb_carriage_return_2(
   return *this;
 };
 ch9329::ch9329_parameters& ch9329::ch9329_parameters::set_kb_start_filter_chars(
-  std::uint32_t p_start_filters)
+  std::array<hal::byte, 4> p_start_filters)
 {
-  m_config_bytes[28] = static_cast<hal::byte>(p_start_filters >> 24);
-  m_config_bytes[29] = static_cast<hal::byte>(p_start_filters >> 16);
-  m_config_bytes[30] = static_cast<hal::byte>(p_start_filters >> 8);
-  m_config_bytes[31] = static_cast<hal::byte>(p_start_filters);
+  m_config_bytes[28] = p_start_filters[0];
+  m_config_bytes[29] = p_start_filters[1];
+  m_config_bytes[30] = p_start_filters[2];
+  m_config_bytes[31] = p_start_filters[3];
   return *this;
 };
 ch9329::ch9329_parameters& ch9329::ch9329_parameters::set_kb_end_filter_chars(
-  std::uint32_t p_end_filters)
+  std::array<hal::byte, 4> p_end_filters)
 {
-  m_config_bytes[32] = static_cast<hal::byte>(p_end_filters >> 24);
-  m_config_bytes[33] = static_cast<hal::byte>(p_end_filters >> 16);
-  m_config_bytes[34] = static_cast<hal::byte>(p_end_filters >> 8);
-  m_config_bytes[35] = static_cast<hal::byte>(p_end_filters);
+  m_config_bytes[32] = p_end_filters[0];
+  m_config_bytes[33] = p_end_filters[1];
+  m_config_bytes[34] = p_end_filters[2];
+  m_config_bytes[35] = p_end_filters[3];
   return *this;
 };
 ch9329::ch9329_parameters& ch9329::ch9329_parameters::set_usb_string_enable(
-  hal::byte p_enable)
+  custom_descriptor p_descriptor,
+  bool p_enable)
 {
-  m_config_bytes[36] = p_enable;
+  if (p_enable) {
+    hal::byte mask = 1 << hal::value(p_descriptor);
+    m_config_bytes[36] = m_config_bytes[36] | mask;
+  } else {
+    hal::byte mask = ~(1 << hal::value(p_descriptor));
+    m_config_bytes[36] = m_config_bytes[36] & mask;
+  }
   return *this;
 };
 ch9329::ch9329_parameters&
 ch9329::ch9329_parameters::set_ascii_mode_kb_fast_upload_mode(
-  hal::byte p_fast_upload)
+  bool p_fast_upload)
 {
-  m_config_bytes[37] = p_fast_upload;
+  m_config_bytes[37] = static_cast<hal::byte>(p_fast_upload);
   return *this;
 };
-hal::byte ch9329::ch9329_parameters::get_chip_working_mode()
+working_mode ch9329::ch9329_parameters::get_chip_working_mode()
 {
-  return m_config_bytes[0];
+  return static_cast<working_mode>(m_config_bytes[0]);
 };
-hal::byte ch9329::ch9329_parameters::get_serial_communication_mode()
+communication_mode ch9329::ch9329_parameters::get_serial_communication_mode()
 {
-  return m_config_bytes[1];
+  return static_cast<communication_mode>(m_config_bytes[1]);
 };
 hal::byte ch9329::ch9329_parameters::get_serial_address()
 {
@@ -674,9 +694,9 @@ std::uint16_t ch9329::ch9329_parameters::get_ascii_mode_kb_release_delay()
 {
   return static_cast<uint16_t>((m_config_bytes[17] << 8) | m_config_bytes[18]);
 };
-hal::byte ch9329::ch9329_parameters::get_ascii_mode_kb_auto_enter()
+bool ch9329::ch9329_parameters::get_ascii_mode_kb_auto_enter()
 {
-  return m_config_bytes[19];
+  return static_cast<bool>(m_config_bytes[19]);
 };
 std::uint32_t ch9329::ch9329_parameters::get_ascii_mode_kb_carriage_return_1()
 {
@@ -694,28 +714,31 @@ std::uint32_t ch9329::ch9329_parameters::get_ascii_mode_kb_carriage_return_2()
   carriage_ret_2 = (carriage_ret_2 << 8) | m_config_bytes[27];
   return carriage_ret_2;
 };
-std::uint32_t ch9329::ch9329_parameters::get_kb_start_filter_chars()
+std::array<hal::byte, 4> ch9329::ch9329_parameters::get_kb_start_filter_chars()
 {
-  std::uint32_t start_filters = m_config_bytes[28];
-  start_filters = (start_filters << 8) | m_config_bytes[29];
-  start_filters = (start_filters << 8) | m_config_bytes[30];
-  start_filters = (start_filters << 8) | m_config_bytes[31];
+  std::array<hal::byte, 4> start_filters = { m_config_bytes[28],
+                                             m_config_bytes[29],
+                                             m_config_bytes[30],
+                                             m_config_bytes[31] };
   return start_filters;
 };
-std::uint32_t ch9329::ch9329_parameters::get_kb_end_filter_chars()
+std::array<hal::byte, 4> ch9329::ch9329_parameters::get_kb_end_filter_chars()
 {
-  std::uint32_t end_filters = m_config_bytes[32];
-  end_filters = (end_filters << 8) | m_config_bytes[33];
-  end_filters = (end_filters << 8) | m_config_bytes[34];
-  end_filters = (end_filters << 8) | m_config_bytes[35];
+  std::array<hal::byte, 4> end_filters = { m_config_bytes[32],
+                                           m_config_bytes[33],
+                                           m_config_bytes[34],
+                                           m_config_bytes[35] };
   return end_filters;
 };
-hal::byte ch9329::ch9329_parameters::get_usb_string_enable()
+bool ch9329::ch9329_parameters::get_usb_string_enable(
+  custom_descriptor p_descriptor)
 {
-  return m_config_bytes[36];
+  hal::byte mask = 1 << hal::value(p_descriptor);
+  hal::byte status = (m_config_bytes[36] | mask) >> hal::value(p_descriptor);
+  return static_cast<bool>(status);
 };
-hal::byte ch9329::ch9329_parameters::get_ascii_mode_kb_fast_upload_mode()
+bool ch9329::ch9329_parameters::get_ascii_mode_kb_fast_upload_mode()
 {
-  return m_config_bytes[37];
+  return static_cast<bool>(m_config_bytes[37]);
 };
 }  // namespace hal::input

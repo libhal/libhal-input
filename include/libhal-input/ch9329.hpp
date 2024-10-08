@@ -14,9 +14,11 @@
 
 #pragma once
 
+#include <array>
 #include <cstdint>
 
 #include <libhal-input/ch9329_keyboard_constants.hpp>
+#include <libhal-input/ch9329_parameter_constants.hpp>
 #include <libhal/serial.hpp>
 #include <libhal/units.hpp>
 
@@ -26,6 +28,9 @@ constexpr auto mouse_rel_data_size = 5;
 constexpr auto kb_media_data_size = 4;
 constexpr auto kb_acpi_data_size = 2;
 constexpr auto kb_general_data_size = 8;
+constexpr auto parameter_data_size = 50;
+constexpr auto filter_chars_length = 4;
+constexpr auto usb_string_descriptor_max_length = 23;
 
 /**
  * @brief Driver for CH9329 UART to USB
@@ -66,7 +71,7 @@ public:
     {
       return std::span(buffer).first(length);
     }
-    std::array<hal::byte, 23> buffer{};
+    std::array<hal::byte, usb_string_descriptor_max_length> buffer{};
     std::size_t length = 0;
   };
 
@@ -89,49 +94,53 @@ public:
      *
      * @param p_config_bytes array holding parameter settings in bytes
      */
-    ch9329_parameters(std::array<hal::byte, 50> p_config_bytes);
+    ch9329_parameters(
+      std::array<hal::byte, parameter_data_size> p_config_bytes);
 
     /**
      * @brief Set the array containing parameter bytes
      *
-     * @param p_config_bytes bytes to use
+     * @param p_config_bytes bytes containing parameters
      * @return ch9329_parameters&
      */
     ch9329_parameters& set_config_bytes(
-      std::array<hal::byte, 50> p_config_bytes);
+      std::array<hal::byte, parameter_data_size> p_config_bytes);
     /**
      * @brief Set the chip working mode.
      *
-     * @param p_working_mode
+     * @param p_working_mode working_mode enum representing which working mode
+     * to use
      * @return ch9329_parameters&
      */
-    ch9329_parameters& set_chip_working_mode(hal::byte p_working_mode);
+    ch9329_parameters& set_chip_working_mode(working_mode p_working_mode);
     /**
      * @brief Set the serial communication mode
      *
-     * @param p_communication_mode
+     * @param p_communication_mode communication_mode enum representing which
+     * communication mode to use
      * @return ch9329_parameters&
      */
     ch9329_parameters& set_serial_communication_mode(
-      hal::byte p_communication_mode);
+      communication_mode p_communication_mode);
     /**
      * @brief Set the serial mode baud rate
      *
-     * @param p_baud
+     * @param p_baud baud rate to set the chip to use
      * @return ch9329_parameters&
      */
     ch9329_parameters& set_serial_mode_baud_rate(std::uint32_t p_baud);
     /**
      * @brief Set the serial address
      *
-     * @param p_serial
+     * @param p_serial serial address of chip
      * @return ch9329_parameters&
      */
     ch9329_parameters& set_serial_address(hal::byte p_serial);
     /**
      * @brief Set the serial mode packet interval
      *
-     * @param p_packet_interval
+     * @param p_packet_interval max time in ms to wait between bytes before
+     * ending packet
      * @return ch9329_parameters&
      */
     ch9329_parameters& set_serial_mode_packet_interval(
@@ -139,21 +148,22 @@ public:
     /**
      * @brief Set the vendor id
      *
-     * @param p_vid
+     * @param p_vid 2 bytes representing the vendor id of the chip
      * @return ch9329_parameters&
      */
     ch9329_parameters& set_vendor_id(std::uint16_t p_vid);
     /**
      * @brief Set the product id
      *
-     * @param p_pid
+     * @param p_pid 2 bytes representing the product id of the chip
      * @return ch9329_parameters&
      */
     ch9329_parameters& set_product_id(std::uint16_t p_pid);
     /**
      * @brief Set the ascii mode keyboard upload interval
      *
-     * @param p_upload_interval
+     * @param p_upload_interval time to wait in ms between sending packets in
+     * ascii mode
      * @return ch9329_parameters&
      */
     ch9329_parameters& set_ascii_mode_kb_upload_interval(
@@ -161,18 +171,19 @@ public:
     /**
      * @brief Set the ascii mode keyboard release delay
      *
-     * @param p_release_dealy
+     * @param p_release_delay time to wait in ms before sending packet to
+     * release keys pressed in ascii mode ascii mode
      * @return ch9329_parameters&
      */
     ch9329_parameters& set_ascii_mode_kb_release_delay(
-      std::uint16_t p_release_dealy);
+      std::uint16_t p_release_delay);
     /**
      * @brief Set the ascii mode keyboard auto enter
      *
-     * @param p_auto_enter
+     * @param p_auto_enter auto send enter after end of package in ascii mode
      * @return ch9329_parameters&
      */
-    ch9329_parameters& set_ascii_mode_kb_auto_enter(hal::byte p_auto_enter);
+    ch9329_parameters& set_ascii_mode_kb_auto_enter(bool p_auto_enter);
     /**
      * @brief Set the ascii mode keyboard carriage return 1
      *
@@ -192,45 +203,50 @@ public:
     /**
      * @brief Set the keyboard start filter characters
      *
-     * @param p_start_filters
+     * @param p_start_filters start filter characters
      * @return ch9329_parameters&
      */
-    ch9329_parameters& set_kb_start_filter_chars(std::uint32_t p_start_filters);
+    ch9329_parameters& set_kb_start_filter_chars(
+      std::array<hal::byte, filter_chars_length> p_start_filters);
     /**
      * @brief Set the keyboard end filter characters
      *
-     * @param p_end_filters
+     * @param p_end_filters end filter characters
      * @return ch9329_parameters&
      */
-    ch9329_parameters& set_kb_end_filter_chars(std::uint32_t p_end_filters);
+    ch9329_parameters& set_kb_end_filter_chars(
+      std::array<hal::byte, filter_chars_length> p_end_filters);
     /**
-     * @brief Set the usb string enable flag
+     * @brief Enable or disable custom usb string descriptors
      *
-     * @param p_enable
+     * @param p_descriptor custom_descriptor enum representing which descriptor
+     * to change
+     * @param p_enable allow custom string descriptor
      * @return ch9329_parameters&
      */
-    ch9329_parameters& set_usb_string_enable(hal::byte p_enable);
+    ch9329_parameters& set_usb_string_enable(custom_descriptor p_descriptor,
+                                             bool p_enable);
     /**
      * @brief Set the ascii mode keyboard fast upload mode
      *
-     * @param p_fast_upload
+     * @param p_fast_upload send all characters before sending release keys
+     * packets
      * @return ch9329_parameters&
      */
-    ch9329_parameters& set_ascii_mode_kb_fast_upload_mode(
-      hal::byte p_fast_upload);
+    ch9329_parameters& set_ascii_mode_kb_fast_upload_mode(bool p_fast_upload);
 
     /**
      * @brief Get the chip working mode
      *
-     * @return hal::byte
+     * @return working_mode
      */
-    hal::byte get_chip_working_mode();
+    working_mode get_chip_working_mode();
     /**
      * @brief Get the serial communication mode
      *
-     * @return hal::byte
+     * @return communication_mode
      */
-    hal::byte get_serial_communication_mode();
+    communication_mode get_serial_communication_mode();
     /**
      * @brief Get the serial address
      *
@@ -276,9 +292,9 @@ public:
     /**
      * @brief Get the ascii mode keyboard auto enter flag
      *
-     * @return hal::byte
+     * @return bool
      */
-    hal::byte get_ascii_mode_kb_auto_enter();
+    bool get_ascii_mode_kb_auto_enter();
     /**
      * @brief Get the ascii mode keyboard carriage return 1
      *
@@ -294,27 +310,27 @@ public:
     /**
      * @brief Get the keyboard start filter characters
      *
-     * @return std::uint32_t
+     * @return std::array<hal::byte, start_end_chars_length>
      */
-    std::uint32_t get_kb_start_filter_chars();
+    std::array<hal::byte, filter_chars_length> get_kb_start_filter_chars();
     /**
      * @brief Get the keyboard end filter characters
      *
-     * @return std::uint32_t
+     * @return std::array<hal::byte, start_end_chars_length>
      */
-    std::uint32_t get_kb_end_filter_chars();
+    std::array<hal::byte, filter_chars_length> get_kb_end_filter_chars();
     /**
      * @brief Get the usb string enable flag
      *
-     * @return hal::byte
+     * @return bool
      */
-    hal::byte get_usb_string_enable();
+    bool get_usb_string_enable(custom_descriptor p_descriptor);
     /**
      * @brief Get the ascii mode keyboard fast upload mode
      *
      * @return hal::byte
      */
-    hal::byte get_ascii_mode_kb_fast_upload_mode();
+    bool get_ascii_mode_kb_fast_upload_mode();
     /**
      * @brief Get the config bytes array
      *
@@ -326,7 +342,7 @@ public:
     }
 
   private:
-    std::array<hal::byte, 50> m_config_bytes = {};
+    std::array<hal::byte, parameter_data_size> m_config_bytes = {};
   };
 
   /**

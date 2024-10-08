@@ -44,20 +44,14 @@ void initialize_platform(resource_list& p_resources)
                                   hal::serial::settings{
                                     .baud_rate = 115200,
                                   });
-<<<<<<< HEAD
-=======
   p_resources.console = &uart1;
 
->>>>>>> main
   static hal::stm32f1::uart uart3(hal::port<3>,
                                   hal::buffer<128>,
                                   hal::serial::settings{
                                     .baud_rate = 9600,
                                   });
-<<<<<<< HEAD
-=======
   p_resources.uart3 = &uart3;
->>>>>>> main
 
   static hal::stm32f1::output_pin led('C', 13);
   p_resources.status_led = &led;
@@ -67,17 +61,5 @@ void initialize_platform(resource_list& p_resources)
   static hal::bit_bang_i2c::pins pins{ .sda = &sda, .scl = &scl };
   static hal::bit_bang_i2c bit_bang_i2c(pins, counter);
   bit_bang_i2c.configure(hal::i2c::settings{ .clock_rate = 100.0_kHz });
-<<<<<<< HEAD
-
-  return {
-    .reset = +[]() { hal::cortex_m::reset(); },
-    .console = &uart1,
-    .uart3 = &uart3,
-    .clock = &counter,
-    .status_led = &led,
-    .i2c = &bit_bang_i2c,
-  };
-=======
   p_resources.i2c = &bit_bang_i2c;
->>>>>>> main
 }
