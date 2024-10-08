@@ -15,11 +15,18 @@
 #pragma once
 
 #include <cstdint>
-#include <libhal-input/ch9329_kb_bytes.hpp>
+
+#include <libhal-input/ch9329_keyboard_constants.hpp>
 #include <libhal/serial.hpp>
 #include <libhal/units.hpp>
 
 namespace hal::input {
+constexpr auto mouse_abs_data_size = 7;
+constexpr auto mouse_rel_data_size = 5;
+constexpr auto kb_media_data_size = 4;
+constexpr auto kb_acpi_data_size = 2;
+constexpr auto kb_general_data_size = 8;
+
 /**
  * @brief Driver for CH9329 UART to USB
  *
@@ -408,7 +415,7 @@ public:
   private:
     std::uint16_t m_screen_width;
     std::uint16_t m_screen_height;
-    std::array<hal::byte, 7> m_data = {};
+    std::array<hal::byte, mouse_abs_data_size> m_data = {};
   };
 
   /**
@@ -477,7 +484,7 @@ public:
     }
 
   private:
-    std::array<hal::byte, 5> m_data = {};
+    std::array<hal::byte, mouse_rel_data_size> m_data = {};
   };
 
   /**
@@ -517,7 +524,7 @@ public:
     }
 
   private:
-    std::array<hal::byte, 4> m_data = {};
+    std::array<hal::byte, kb_media_data_size> m_data = {};
   };
 
   /**
@@ -562,7 +569,7 @@ public:
     }
 
   private:
-    std::array<hal::byte, 2> m_data = {};
+    std::array<hal::byte, kb_acpi_data_size> m_data = {};
   };
 
   /**
@@ -585,7 +592,7 @@ public:
      * @param p_key control_key_bit enum value representing which key to press
      * @return keyboard_general&
      */
-    keyboard_general& press_control_key(control_key_bit p_key);
+    keyboard_general& press_control_key(control_key p_key);
     /**
      * @brief Press a normal key.
      *
@@ -601,7 +608,7 @@ public:
      * @param p_key control_key_bit enum value representing which key to release
      * @return keyboard_general&
      */
-    keyboard_general& release_control_key(control_key_bit p_key);
+    keyboard_general& release_control_key(control_key p_key);
     /**
      * @brief Release a normal key.
      *
@@ -626,7 +633,7 @@ public:
     }
 
   private:
-    std::array<hal::byte, 8> m_data = {};
+    std::array<hal::byte, kb_general_data_size> m_data = {};
   };
 
   /**

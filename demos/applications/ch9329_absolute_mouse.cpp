@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <cstdint>
+
 #include <libhal-input/ch9329.hpp>
 #include <libhal-input/gamepad/nunchuck.hpp>
 #include <libhal-util/serial.hpp>
