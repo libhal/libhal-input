@@ -117,6 +117,8 @@ hal::byte get_size_byte(hal::byte p_command)
       return 0x05;
     case cmd_get_usb_string:
       return 0x01;
+    case cmd_set_para_cfg:
+      return 0x32;
   }
   return 0x00;
 }
@@ -319,11 +321,7 @@ ch9329::ch9329_parameters ch9329::get_parameters()
 hal::byte ch9329::set_parameters(ch9329_parameters const& p_parameters)
 {
   auto bytes = p_parameters.get_config_bytes();
-  send_start_bytes(*m_uart, cmd_set_para_cfg, parameters_length);
-  hal::print(*m_uart, bytes);
-  auto sum_byte = calculate_sum(bytes, cmd_set_para_cfg);
-  sum_byte += parameters_length;
-  hal::print(*m_uart, std::to_array({ sum_byte }));
+  send_command_with_bytes(bytes, cmd_set_para_cfg, *m_uart);
   std::array<hal::byte, response_length> response;
   hal::read(*m_uart, response, hal::never_timeout());
   return response[response_byte];
