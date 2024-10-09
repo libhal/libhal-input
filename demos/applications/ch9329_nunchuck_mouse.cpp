@@ -33,7 +33,6 @@ void application(resource_list& p_map)
 
   hal::input::nunchuck nunchuck(i2c);
   hal::input::ch9329 usb_control(uart3);
-  hal::input::ch9329::keyboard_general kb_control;
   hal::input::ch9329::mouse_relative rel_mouse_control;
 
   hal::print(console, "Demo Application Starting...\n\n");
