@@ -16,6 +16,9 @@
 
 #include <algorithm>
 #include <array>
+#include <libhal-util/steady_clock.hpp>
+#include <libhal/error.hpp>
+#include <libhal/steady_clock.hpp>
 #include <span>
 
 #include <libhal-input/ch9329.hpp>
@@ -54,9 +57,29 @@ constexpr auto check_sum_read_length = 1;
 constexpr auto string_header_length = 2;
 constexpr auto parameters_length = 50;
 
-ch9329::ch9329(hal::serial& p_uart)
+constexpr std::array<hertz, 5> standard_baud_rates = { 9600,
+                                                       19200,
+                                                       38400,
+                                                       57600,
+                                                       115200 };
+
+ch9329::ch9329(hal::serial& p_uart, hal::steady_clock& p_clock)
   : m_uart(&p_uart)
 {
+  using namespace std::chrono_literals;
+  auto wait_time = hal::create_timeout(p_clock, 10ms);
+  for (auto baud : standard_baud_rates) {
+    try {
+      m_uart->configure({ .baud_rate = baud });
+      auto response = get_info(wait_time);
+      if (response.version < 0x30) {
+        break;
+      }
+    } catch (timed_out) {
+      // what do here?
+      throw;
+    }
+  }
 }
 
 ch9329::ch9329_parameters::ch9329_parameters(
@@ -195,12 +218,13 @@ void ch9329::send(keyboard_acpi const& p_data)
   send_command_with_bytes(bytes, cmd_send_kb_media_data, *m_uart, 2);
 }
 
-ch9329::chip_info ch9329::get_info()
+ch9329::chip_info ch9329::get_info(
+  hal::function_ref<hal::timeout_function> p_timeout = hal::never_timeout())
 {
   std::array<hal::byte, info_response_length> response{};
   send_start_bytes(*m_uart, cmd_get_info);
   hal::print(*m_uart, std::to_array({ (hal::byte)0x03 }));  // sum byte
-  hal::read(*m_uart, response, hal::never_timeout());
+  hal::read(*m_uart, response, p_timeout);
   chip_info info = {};
   info.version = response[5];
   info.enumeration_status = response[6];
@@ -210,18 +234,20 @@ ch9329::chip_info ch9329::get_info()
   return info;
 }
 
-ch9329::usb_string_descriptor get_usb_string_descriptor(serial& p_serial,
-                                                        hal::byte p_string_type)
+ch9329::usb_string_descriptor get_usb_string_descriptor(
+  serial& p_serial,
+  hal::byte p_string_type,
+  hal::function_ref<hal::timeout_function> p_timeout)
 {
   ch9329::usb_string_descriptor str;
   auto bytes = std::to_array({ p_string_type });
   send_command_with_bytes(bytes, cmd_get_usb_string, p_serial);
   std::array<hal::byte, response_length> header_bytes;
-  hal::read(p_serial, header_bytes, hal::never_timeout());
+  hal::read(p_serial, header_bytes, p_timeout);
   str.length = header_bytes.back();
-  hal::read(p_serial, str.received_data(), hal::never_timeout());
+  hal::read(p_serial, str.received_data(), p_timeout);
   std::array<hal::byte, check_sum_read_length> check_sum;
-  hal::read(p_serial, check_sum, hal::never_timeout());
+  hal::read(p_serial, check_sum, p_timeout);
   return str;
 }
 
@@ -250,19 +276,22 @@ hal::byte set_usb_string_descriptor(serial& p_serial,
   return response[response_byte];
 }
 
-ch9329::usb_string_descriptor ch9329::get_manufacturer_descriptor()
+ch9329::usb_string_descriptor ch9329::get_manufacturer_descriptor(
+  hal::function_ref<hal::timeout_function> p_timeout = hal::never_timeout())
 {
-  return get_usb_string_descriptor(*m_uart, 0x00);
+  return get_usb_string_descriptor(*m_uart, 0x00, p_timeout);
 }
 
-ch9329::usb_string_descriptor ch9329::get_product_descriptor()
+ch9329::usb_string_descriptor ch9329::get_product_descriptor(
+  hal::function_ref<hal::timeout_function> p_timeout = hal::never_timeout())
 {
-  return get_usb_string_descriptor(*m_uart, 0x01);
+  return get_usb_string_descriptor(*m_uart, 0x01, p_timeout);
 }
 
-ch9329::usb_string_descriptor ch9329::get_serial_number_descriptor()
+ch9329::usb_string_descriptor ch9329::get_serial_number_descriptor(
+  hal::function_ref<hal::timeout_function> p_timeout = hal::never_timeout())
 {
-  return get_usb_string_descriptor(*m_uart, 0x02);
+  return get_usb_string_descriptor(*m_uart, 0x02, p_timeout);
 }
 
 hal::byte ch9329::set_manufacturer_descriptor(std::string_view p_string)
@@ -300,7 +329,8 @@ hal::byte ch9329::reset()
   return response[response_byte];
 }
 
-ch9329::ch9329_parameters ch9329::get_parameters()
+ch9329::ch9329_parameters ch9329::get_parameters(
+  hal::function_ref<hal::timeout_function> p_timeout = hal::never_timeout())
 {
   send_start_bytes(*m_uart, cmd_get_para_cfg);
   auto sum_byte = calculate_sum({}, cmd_get_para_cfg);
@@ -309,21 +339,23 @@ ch9329::ch9329_parameters ch9329::get_parameters()
   std::array<hal::byte, parameters_length> response;
   std::array<hal::byte, check_sum_read_length> response_sum;
 
-  hal::read(*m_uart, response_header, hal::never_timeout());
-  hal::read(*m_uart, response, hal::never_timeout());
-  hal::read(*m_uart, response_sum, hal::never_timeout());
+  hal::read(*m_uart, response_header, p_timeout);
+  hal::read(*m_uart, response, p_timeout);
+  hal::read(*m_uart, response_sum, p_timeout);
 
   ch9329_parameters params(response);
 
   return params;
 }
 
-hal::byte ch9329::set_parameters(ch9329_parameters const& p_parameters)
+hal::byte ch9329::set_parameters(
+  ch9329_parameters const& p_parameters,
+  hal::function_ref<hal::timeout_function> p_timeout = hal::never_timeout())
 {
   auto bytes = p_parameters.get_config_bytes();
   send_command_with_bytes(bytes, cmd_set_para_cfg, *m_uart);
   std::array<hal::byte, response_length> response;
-  hal::read(*m_uart, response, hal::never_timeout());
+  hal::read(*m_uart, response, p_timeout);
   return response[response_byte];
 }
 

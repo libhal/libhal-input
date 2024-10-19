@@ -19,7 +19,10 @@
 
 #include <libhal-input/ch9329_keyboard_constants.hpp>
 #include <libhal-input/ch9329_parameter_constants.hpp>
+#include <libhal/functional.hpp>
 #include <libhal/serial.hpp>
+#include <libhal/steady_clock.hpp>
+#include <libhal/timeout.hpp>
 #include <libhal/units.hpp>
 
 namespace hal::input {
@@ -657,7 +660,7 @@ public:
    *
    * @param p_uart uart used to communicate with CH9329
    */
-  ch9329(hal::serial& p_uart);
+  ch9329(hal::serial& p_uart, hal::steady_clock& p_clock);
   /**
    * @brief Send mouse absolute position command
    *
@@ -695,37 +698,42 @@ public:
    * @param p_data object containing parameters to change
    * @return hal::byte status byte returned from chip
    */
-  hal::byte set_parameters(ch9329_parameters const& p_data);
+  hal::byte set_parameters(ch9329_parameters const& p_data,
+                           hal::function_ref<hal::timeout_function> p_timeout);
   /**
    * @brief Get the current parameters configuration from the chip
    *
    * @return ch9329_parameters contains parameters and the response bytes
    */
-  ch9329_parameters get_parameters();
+  ch9329_parameters get_parameters(
+    hal::function_ref<hal::timeout_function> p_timeout);
   /**
    * @brief Get info about the chip
    *
    * @return chip_info contains basic information about the chip
    */
-  chip_info get_info();
+  chip_info get_info(hal::function_ref<hal::timeout_function> p_timeout);
   /**
    * @brief Get the manufacturer usb string descriptor on the chip
    *
    * @return usb_string_descriptor contains buffer and trimmed data
    */
-  usb_string_descriptor get_manufacturer_descriptor();
+  usb_string_descriptor get_manufacturer_descriptor(
+    hal::function_ref<hal::timeout_function> p_timeout);
   /**
    * @brief Get the product usb string descriptor on the chip
    *
    * @return usb_string_descriptor contains buffer and trimmed data
    */
-  usb_string_descriptor get_product_descriptor();
+  usb_string_descriptor get_product_descriptor(
+    hal::function_ref<hal::timeout_function> p_timeout);
   /**
    * @brief Get the serial number usb string descriptor on the chip
    *
    * @return usb_string_descriptor contains buffer and trimmed data
    */
-  usb_string_descriptor get_serial_number_descriptor();
+  usb_string_descriptor get_serial_number_descriptor(
+    hal::function_ref<hal::timeout_function> p_timeout);
   /**
    * @brief Set the manufacturer usb string descriptor
    *

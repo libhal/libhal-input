@@ -32,7 +32,7 @@ void application(resource_list& p_map)
   auto& i2c = *p_map.i2c.value();
 
   hal::input::nunchuck nunchuck(i2c);
-  hal::input::ch9329 usb_control(uart3);
+  hal::input::ch9329 usb_control(uart3, clock);
   hal::input::ch9329::mouse_relative rel_mouse_control;
 
   hal::print(console, "Demo Application Starting...\n\n");
