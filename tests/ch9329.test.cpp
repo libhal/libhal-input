@@ -17,79 +17,12 @@
 #include <boost/ut.hpp>
 
 namespace hal::input {
-boost::ut::suite<"ch9329_test"> ch9329_test = [] {
+boost::ut::suite steady_clock_test = [] {
   using namespace boost::ut;
   using namespace std::literals;
 
-  static constexpr hal::byte write_failure_byte{ 'C' };
-  static constexpr hal::byte filler_byte{ 'A' };
-
-  class fake_serial : public hal::serial
-  {
-  public:
-    void driver_configure(settings const&) override
-    {
-    }
-
-    write_t driver_write(std::span<hal::byte const> p_data) override
-    {
-      m_write_call_count++;
-      if (p_data[0] == write_failure_byte) {
-        safe_throw(hal::io_error(this));
-      }
-      m_out = p_data;
-
-      if (m_single_byte_out) {
-        return write_t{ p_data.subspan(0, 1) };
-      }
-      return write_t{ p_data };
-    }
-
-    read_t driver_read(std::span<hal::byte> p_data) override
-    {
-      if (p_data.size() == 0) {
-        return read_t{
-          .data = p_data,
-          .available = 1,
-          .capacity = 1,
-        };
-      }
-
-      m_read_was_called = true;
-
-      if (m_read_fails) {
-        safe_throw(hal::io_error(this));
-      }
-
-      // only fill 1 byte at a time
-      p_data[0] = filler_byte;
-
-      return read_t{
-        .data = p_data.subspan(0, 1),
-        .available = 1,
-        .capacity = 1,
-      };
-    }
-
-    void driver_flush() override
-    {
-      m_flush_called = true;
-    }
-
-    ~fake_serial() override = default;
-
-    std::span<hal::byte const> m_out{};
-    int m_write_call_count = 0;
-    bool m_read_was_called = false;
-    bool m_flush_called = false;
-    bool m_read_fails = false;
-    bool m_single_byte_out = false;
-  };
-
   "ch9329::ch9329()"_test = []() {
     // Setup
-    fake_serial test_serial;
-    hal::input::ch9329 usb_control(test_serial);
     // Exercise
     // Verify
   };

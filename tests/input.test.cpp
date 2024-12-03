@@ -17,7 +17,7 @@
 #include <boost/ut.hpp>
 
 namespace hal::input {
-boost::ut::suite<"input_test"> input_test = [] {
+boost::ut::suite input_test = [] {
   using namespace boost::ut;
   using namespace std::literals;
 
