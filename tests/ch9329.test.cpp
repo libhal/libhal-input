@@ -17,8 +17,7 @@
 #include <boost/ut.hpp>
 
 namespace hal::input {
-void ch9329_test()
-{
+boost::ut::suite<"ch9329_test"> ch9329_test = [] {
   using namespace boost::ut;
   using namespace std::literals;
 
