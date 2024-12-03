@@ -13,10 +13,8 @@
 // limitations under the License.
 
 namespace hal::input {
-extern void input_test();
 }  // namespace hal::input
 
 int main()
 {
-  hal::input::input_test();
 }
