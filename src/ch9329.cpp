@@ -45,8 +45,8 @@ ch9329::ch9329(hal::serial& p_uart)
 {
 }
 
-ch9329::mouse_absolute::mouse_absolute(std::uint16_t p_screen_width,
-                                       std::uint16_t p_screen_height)
+ch9329::mouse_absolute::mouse_absolute(std::uint16_t p_screen_width,   // NOLINT
+                                       std::uint16_t p_screen_height)  // NOLINT
   : m_screen_width(p_screen_width)
   , m_screen_height(p_screen_height)
 
@@ -85,13 +85,15 @@ hal::byte get_size_byte(hal::byte p_command)
       return 0x07;
     case cmd_send_ms_rel_data:
       return 0x05;
+    default:
+      return 0x00;
   }
   return 0x00;
 }
 
 void send_start_bytes(serial& p_serial,
-                      hal::byte p_command,
-                      std::uint8_t p_size = 0)
+                      hal::byte p_command,      // NOLINT
+                      std::uint8_t p_size = 0)  // NOLINT
 {
   std::array<hal::byte, header_frame_size> start_bytes = {
     header_byte_1, header_byte_2, address_byte, p_command
@@ -105,8 +107,8 @@ void send_start_bytes(serial& p_serial,
 }
 
 hal::byte calculate_sum(std::span<hal::byte> p_bytes,
-                        hal::byte p_command,
-                        std::uint8_t p_custom_length = 0)
+                        hal::byte p_command,               // NOLINT
+                        std::uint8_t p_custom_length = 0)  // NOLINT
 {
   std::uint8_t sum_byte = header_byte_1;
   sum_byte += header_byte_2;
@@ -224,8 +226,9 @@ ch9329::mouse_absolute& ch9329::mouse_absolute::right_button(bool p_pressed)
 }
 
 // mouse relative functions
-ch9329::mouse_relative& ch9329::mouse_relative::move(std::int8_t p_x_offset,
-                                                     std::int8_t p_y_offset)
+ch9329::mouse_relative& ch9329::mouse_relative::move(
+  std::int8_t p_x_offset,  // NOLINT
+  std::int8_t p_y_offset)  // NOLINT
 {
   m_data[2] = p_x_offset;
   m_data[3] = p_y_offset;
