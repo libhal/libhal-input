@@ -17,7 +17,7 @@
 #include <boost/ut.hpp>
 
 namespace hal::input {
-boost::ut::suite steady_clock_test = [] {
+boost::ut::suite<"ch9329_test"> ch9329_test = [] {
   using namespace boost::ut;
   using namespace std::literals;
 
