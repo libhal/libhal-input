@@ -14,11 +14,11 @@
 
 #include <libhal-arm-mcu/dwt_counter.hpp>
 #include <libhal-arm-mcu/startup.hpp>
+#include <libhal-arm-mcu/stm32f1/clock.hpp>
+#include <libhal-arm-mcu/stm32f1/constants.hpp>
+#include <libhal-arm-mcu/stm32f1/output_pin.hpp>
+#include <libhal-arm-mcu/stm32f1/uart.hpp>
 #include <libhal-arm-mcu/system_control.hpp>
-#include <libhal-stm32f1/clock.hpp>
-#include <libhal-stm32f1/constants.hpp>
-#include <libhal-stm32f1/output_pin.hpp>
-#include <libhal-stm32f1/uart.hpp>
 #include <libhal-util/bit_bang_i2c.hpp>
 #include <libhal/units.hpp>
 
